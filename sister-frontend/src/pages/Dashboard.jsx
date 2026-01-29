@@ -97,8 +97,8 @@ export default function Dashboard() {
             <img src={logoAsset} alt="Logo Korem" className="dashboard-logo" />
           </div>
           <div className="hero-text">
-            <h1 className="hero-title">Selamat Datang di Koramil 429-09 Way Jepara</h1>
-            <p className="hero-subtitle">Lampung Timur</p>
+            <h1 className="hero-title">SELAMAT DATANG DI KORAMIL 0429-09 WAY JEPARA</h1>
+            <p className="hero-subtitle">LAMPUNG TIMUR</p>
             <p className="hero-description">
               Komando Rayon Militer yang berkomitmen untuk keamanan, ketentraman, dan kesejahteraan masyarakat dengan profesionalisme tinggi.
             </p>

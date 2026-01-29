@@ -1,16 +1,48 @@
 import { Menu, X, Bell, User, Settings, LogOut } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect, useContext } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { SidebarContext } from '../context/SidebarContext';
 import '../styles/navbar.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 
+// Custom hook untuk mendeteksi klik di luar elemen
+const useOutsideAlerter = (ref, onOutsideClick) => {
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (ref.current && !ref.current.contains(event.target)) {
+        onOutsideClick();
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [ref, onOutsideClick]);
+};
+
 export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isSidebarOpen, toggleSidebar } = useContext(SidebarContext);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const userMenuRef = useRef(null);
+  const notificationsRef = useRef(null);
+
+  useOutsideAlerter(userMenuRef, () => setShowUserMenu(false));
+  useOutsideAlerter(notificationsRef, () => setShowNotifications(false));
+
+  // Tutup semua menu saat URL berubah
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setShowUserMenu(false);
+    setShowNotifications(false);
+  }, [location]);
+
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleUserMenu = () => setShowUserMenu(!showUserMenu);
   const toggleNotifications = () => setShowNotifications(!showNotifications);
 
@@ -36,20 +68,21 @@ export default function Navbar() {
 
         {/* Center Navigation - Hidden on mobile */}
         <nav className="navbar-nav">
-          <button onClick={() => navigate('/')} className="nav-link active">Dashboard</button>
-          <button onClick={() => navigate('/wilayah')} className="nav-link">Data</button>
-          <button onClick={() => navigate('/personel')} className="nav-link">Personel</button>
-          <button onClick={() => navigate('/reports')} className="nav-link">Reports</button>
+          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+          <NavLink to="/wilayah" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Data</NavLink>
+          <NavLink to="/personel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
+          <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Reports</NavLink>
         </nav>
 
         {/* Right Side Actions */}
         <div className="navbar-actions">
           {/* Notifications */}
-          <div className="notification-wrapper">
+          <div className="notification-wrapper" ref={notificationsRef}>
             <button 
               className="action-button notification-button" 
               title="Notifications"
               onClick={toggleNotifications}
+              aria-expanded={showNotifications}
             >
               <Bell size={20} />
               <span className="notification-badge">3</span>
@@ -59,7 +92,7 @@ export default function Navbar() {
               <div className="notification-dropdown">
                 <div className="notification-header">
                   <h3>Notifikasi</h3>
-                  <button className="close-notification" onClick={() => setShowNotifications(false)}>×</button>
+                  <button className="close-notification" onClick={() => setShowNotifications(false)} aria-label="Tutup notifikasi">&times;</button>
                 </div>
                 <div className="notification-list">
                   {notifications.map((notif) => (
@@ -81,11 +114,12 @@ export default function Navbar() {
           </div>
 
           {/* User Menu */}
-          <div className="user-menu-wrapper">
+          <div className="user-menu-wrapper" ref={userMenuRef}>
             <button 
               className="action-button user-button"
               onClick={toggleUserMenu}
               title="User Menu"
+              aria-expanded={showUserMenu}
             >
               <div className="user-avatar">IFN</div>
             </button>
@@ -100,19 +134,19 @@ export default function Navbar() {
                   </div>
                 </div>
                 <div className="dropdown-divider"></div>
-                <a href="#" className="dropdown-item">
+                <NavLink to="/profile" className="dropdown-item">
                   <User size={18} />
                   Profile
-                </a>
-                <a href="#" className="dropdown-item">
+                </NavLink>
+                <NavLink to="/settings" className="dropdown-item">
                   <Settings size={18} />
                   Settings
-                </a>
+                </NavLink>
                 <div className="dropdown-divider"></div>
-                <a href="#" className="dropdown-item logout">
+                <button onClick={() => console.log('Logout')} className="dropdown-item logout">
                   <LogOut size={18} />
                   Logout
-                </a>
+                </button>
               </div>
             )}
           </div>
@@ -120,24 +154,25 @@ export default function Navbar() {
           {/* Mobile Menu Toggle */}
           <button 
             className="menu-toggle"
-            onClick={toggleMenu}
+            onClick={toggleMobileMenu}
             title="Toggle Menu"
+            aria-expanded={isMobileMenuOpen}
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
+      {isMobileMenuOpen && (
         <nav className="mobile-menu">
-          <button onClick={() => { navigate('/'); setIsMenuOpen(false); }} className="mobile-menu-link active">Dashboard</button>
-          <button onClick={() => { navigate('/wilayah'); setIsMenuOpen(false); }} className="mobile-menu-link">Data</button>
-          <button onClick={() => { navigate('/personel'); setIsMenuOpen(false); }} className="mobile-menu-link">Personel</button>
-          <button onClick={() => { navigate('/reports'); setIsMenuOpen(false); }} className="mobile-menu-link">Reports</button>
+          <NavLink to="/" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+          <NavLink to="/wilayah" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Data</NavLink>
+          <NavLink to="/personel" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
+          <NavLink to="/reports" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Reports</NavLink>
           <div className="mobile-menu-divider"></div>
-          <a href="#" className="mobile-menu-link">Profile</a>
-          <a href="#" className="mobile-menu-link logout">Logout</a>
+          <NavLink to="/profile" className="mobile-menu-link">Profile</NavLink>
+          <button onClick={() => console.log('Logout')} className="mobile-menu-link logout">Logout</button>
         </nav>
       )}
     </header>
