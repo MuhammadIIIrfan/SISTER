@@ -20,10 +20,10 @@ export default function Footer() {
               Melayani masyarakat dengan integritas, menjaga kedaulatan negara, dan membangun wilayah yang aman serta sejahtera bersama rakyat.
             </p>
             <div className="social-links">
-              <a href="#" className="social-link"><Facebook size={18} /></a>
-              <a href="#" className="social-link"><Instagram size={18} /></a>
-              <a href="#" className="social-link"><Twitter size={18} /></a>
-              <a href="#" className="social-link"><Youtube size={18} /></a>
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Facebook"><Facebook size={18} /></a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Instagram"><Instagram size={18} /></a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Twitter"><Twitter size={18} /></a>
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Youtube"><Youtube size={18} /></a>
             </div>
           </div>
 
@@ -31,15 +31,15 @@ export default function Footer() {
           <div className="footer-contact">
             <h4 className="section-heading">Hubungi Kami</h4>
             <div className="contact-list">
-              <a href="#" className="contact-item">
+              <a href="https://www.google.com/maps/search/?api=1&query=Jl.+Raya+Way+Jepara,+Lampung+Timur" target="_blank" rel="noopener noreferrer" className="contact-item">
                 <MapPin size={18} className="contact-icon" />
                 <span>Jl. Raya Way Jepara, Lampung Timur</span>
               </a>
-              <a href="#" className="contact-item">
+              <a href="tel:0211234567" className="contact-item">
                 <Phone size={18} className="contact-icon" />
                 <span>(021) 123-4567</span>
               </a>
-              <a href="#" className="contact-item">
+              <a href="mailto:koramil429-09@mil.id" className="contact-item">
                 <Mail size={18} className="contact-icon" />
                 <span>koramil429-09@mil.id</span>
               </a>

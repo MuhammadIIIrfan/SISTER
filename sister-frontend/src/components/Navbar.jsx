@@ -133,7 +133,7 @@ export default function Navbar() {
                 <NavLink to="/profile" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', color: '#cbd5e1', textDecoration: 'none', borderRadius: '6px'}}>
                   <User size={16} /> Profile
                 </NavLink>
-                <button onClick={() => console.log('Logout')} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', width: '100%', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', borderRadius: '6px', textAlign: 'left'}}>
+                <button onClick={() => navigate('/login')} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', width: '100%', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', borderRadius: '6px', textAlign: 'left'}}>
                   <LogOut size={16} /> Logout
                 </button>
               </div>

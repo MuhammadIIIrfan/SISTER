@@ -1,8 +1,9 @@
 .footer {
-  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+  background: #0f172a;
+  background: linear-gradient(to top, #022c22, #0f172a);
   color: #e2e8f0;
-  padding: 3rem 2rem 1.5rem;
-  border-top: 4px solid #059669;
+  padding: 4rem 2rem 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   z-index: 10;
 }
@@ -63,20 +64,23 @@
 }
 
 .social-link {
-  background: rgba(255,255,255,0.1);
-  width: 34px;
-  height: 34px;
+  background: rgba(255, 255, 255, 0.05);
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 50%;
   color: #fff;
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .social-link:hover {
   background: #059669;
-  transform: translateY(-3px);
+  border-color: #059669;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
 }
 
 /* Headings */
@@ -119,14 +123,14 @@
   padding: 0.5rem;
   border-radius: 8px;
   transition: all 0.2s ease;
-  background: rgba(255,255,255,0.03);
+  background: transparent;
   border: 1px solid transparent;
 }
 
 .contact-item:hover {
   background: rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.1);
-  color: #fff;
+  color: #34d399;
   transform: translateX(4px);
 }
 
@@ -137,13 +141,13 @@
 
 /* Bottom */
 .footer-bottom {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
-  color: #ffffff;
+  font-size: 0.85rem;
+  color: #94a3b8;
 }
 
 .made-with {
