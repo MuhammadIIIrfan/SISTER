@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Heart, ArrowRight } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Heart } from 'lucide-react';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 import '../styles/footer.css';
 
@@ -45,16 +45,6 @@ export default function Footer() {
                 <span>info@sister.mil.id</span>
               </a>
             </div>
-          </div>
-
-          {/* Newsletter Section */}
-          <div className="footer-newsletter">
-            <h4 className="section-heading">Berita Terbaru</h4>
-            <p className="newsletter-desc">Dapatkan update kegiatan terbaru.</p>
-            <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" placeholder="Email Anda..." className="newsletter-input" />
-              <button type="submit" className="newsletter-btn" aria-label="Subscribe"><ArrowRight size={18} /></button>
-            </form>
           </div>
         </div>
 

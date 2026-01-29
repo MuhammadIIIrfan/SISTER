@@ -1,4 +1,4 @@
-import { Users, Phone, Mail, Award, Building2, Zap, BookOpen, Heart } from 'lucide-react';
+import { Phone, Mail, BookOpen, Heart } from 'lucide-react';
 import '../styles/dashboard.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 import backgroundAsset from '../assets/koramil09.jpg';
@@ -12,54 +12,9 @@ export default function Dashboard() {
     established: '2010'
   };
 
-  const units = [
-    {
-      id: 1,
-      name: 'Pimpinan Koramil',
-      icon: Building2,
-      description: 'Kepemimpinan dan koordinasi strategis',
-      color: '#3b82f6'
-    },
-    {
-      id: 2,
-      name: 'Ops & Intel',
-      icon: Zap,
-      description: 'Operasional dan intelijen wilayah',
-      color: '#10b981'
-    },
-    {
-      id: 3,
-      name: 'Personel & Admin',
-      icon: Users,
-      description: 'Manajemen personel dan administrasi',
-      color: '#f59e0b'
-    },
-    {
-      id: 4,
-      name: 'Logistik & Supply',
-      icon: Building2,
-      description: 'Pengelolaan logistik dan persediaan',
-      color: '#8b5cf6'
-    }
-  ];
-
-  const recentActivities = [
-    { id: 1, activity: 'Patroli Rutin Wilayah Operasi', time: '2 jam lalu', status: 'completed' },
-    { id: 2, activity: 'Briefing Koordinasi dengan Muspika', time: '5 jam lalu', status: 'completed' },
-    { id: 3, activity: 'Inspeksi Kondisi Sarana & Prasarana', time: '8 jam lalu', status: 'completed' },
-    { id: 4, activity: 'Rapat Evaluasi Bulanan', time: '1 hari lalu', status: 'completed' }
-  ];
-
-  const achievements = [
-    { id: 1, title: 'Penghargaan Keamanan Nasional 2023', year: '2023' },
-    { id: 2, title: 'Sertifikasi ISO 9001:2015', year: '2022' },
-    { id: 3, title: 'Best Military Command 2021', year: '2021' },
-    { id: 4, title: 'Prestasi Terpadu Institusi Pertahanan', year: '2020' }
-  ];
-
   return (
     <div className="dashboard-container" style={{ 
-      backgroundImage: `linear-gradient(0deg, rgba(2, 44, 34, 0.6) 0%, rgba(6, 78, 59, 0.5) 100%), url(${backgroundAsset})`,
+      backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(${backgroundAsset})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed'
@@ -73,9 +28,6 @@ export default function Dashboard() {
           <div className="hero-text">
             <h1 className="hero-title">SELAMAT DATANG DI KORAMIL 0429-09 WAY JEPARA</h1>
             <p className="hero-subtitle">LAMPUNG TIMUR</p>
-            <p>
-              
-            </p>
           </div>
 
           <div className="hero-info-cards">
@@ -90,76 +42,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="hero-decoration"></div>
-      </div>
-
-      {/* Organizational Units */}
-      <div className="section-card">
-        <div className="section-header">
-          <h2 className="section-title">Struktur Organisasi</h2>
-          <p className="section-subtitle">Unit-unit operasional Koramil 429-09</p>
-        </div>
-        <div className="units-grid">
-          {units.map((unit) => {
-            const IconComponent = unit.icon;
-            return (
-              <div key={unit.id} className="unit-card">
-                <div 
-                  className="unit-icon"
-                  style={{ backgroundColor: `${unit.color}20`, borderColor: unit.color }}
-                >
-                  <IconComponent size={32} color={unit.color} />
-                </div>
-                <h3 className="unit-name">{unit.name}</h3>
-                <p className="unit-description">{unit.description}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Content Grid */}
-      <div className="dashboard-content-grid">
-        {/* Recent Activities */}
-        <div className="card activity-card">
-          <div className="card-header">
-            <h2 className="card-title">Aktivitas Terbaru</h2>
-            <a href="#" className="view-all">Lihat Semua</a>
-          </div>
-          <div className="activity-list">
-            {recentActivities.map((item) => (
-              <div key={item.id} className="activity-item">
-                <div className="activity-info">
-                  <p className="activity-text">{item.activity}</p>
-                  <span className="activity-time">{item.time}</span>
-                </div>
-                <span className={`activity-badge ${item.status}`}>
-                  ✓ Selesai
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Achievements */}
-        <div className="card achievements-card">
-          <div className="card-header">
-            <h2 className="card-title">Prestasi & Penghargaan</h2>
-            <a href="#" className="view-all">Lihat Semua</a>
-          </div>
-          <div className="achievements-list">
-            {achievements.map((achievement) => (
-              <div key={achievement.id} className="achievement-item">
-                <div className="achievement-icon">
-                  <Award size={20} />
-                </div>
-                <div className="achievement-info">
-                  <p className="achievement-title">{achievement.title}</p>
-                  <span className="achievement-year">{achievement.year}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Mission & Vision */}

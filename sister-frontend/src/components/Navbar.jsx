@@ -1,4 +1,4 @@
-import { Menu, X, Bell, User, Settings, LogOut, LayoutDashboard, MapPin, Users, FileText, TrendingUp, Shield, PieChart, ChevronDown } from 'lucide-react';
+import { Menu, X, Bell, User, Settings, LogOut, LayoutDashboard, MapPin, Users, FileText, TrendingUp, Shield, PieChart } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import '../styles/navbar.css';
@@ -25,26 +25,22 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [showDataMenu, setShowDataMenu] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
 
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
-  const dataMenuRef = useRef(null);
   const lastScrollY = useRef(0);
 
   useOutsideAlerter(userMenuRef, () => setShowUserMenu(false));
   useOutsideAlerter(notificationsRef, () => setShowNotifications(false));
-  useOutsideAlerter(dataMenuRef, () => setShowDataMenu(false));
 
   // Tutup semua menu saat URL berubah
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setShowUserMenu(false);
     setShowNotifications(false);
-    setShowDataMenu(false);
   }, [location]);
 
   // Deteksi scroll untuk mengubah style navbar
@@ -75,177 +71,102 @@ export default function Navbar() {
   ];
 
   return (
-    <header className={`navbar ${isScrolled ? 'scrolled' : ''} ${!isVisible ? 'navbar-hidden' : ''}`}>
+    <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${!isVisible ? 'navbar-hidden' : ''}`}>
       <div className="navbar-container">
-        {/* Logo and Brand */}
-        <div className="navbar-left">
-          <div className="navbar-brand" onClick={() => navigate('/')}>
-            <div className="logo-icon">
-              <img src={logoAsset} alt="Logo" className="logo-image" />
-            </div>
-            <div className="brand-text">
-              <h1 className="app-title">SISTER.</h1>
-            </div>
-          </div>
+        
+        <div className="navbar-brand" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
+          <img src={logoAsset} alt="Logo Sistem" className="brand-logo" />
+          <span className="brand-text">SISTER</span>
         </div>
 
-        {/* Center Navigation - Hidden on mobile */}
-        <nav className="navbar-nav">
+        <div className="navbar-nav">
           <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
-          
-          {/* Dropdown Data Wilayah */}
-          <div className="nav-dropdown-wrapper" ref={dataMenuRef}>
-            <button 
-              className={`nav-link ${location.pathname.includes('/wilayah') ? 'active' : ''}`}
-              onClick={() => setShowDataMenu(!showDataMenu)}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              Data <ChevronDown size={14} style={{ transform: showDataMenu ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
-            </button>
-            {showDataMenu && (
-              <div className="nav-dropdown-content">
-                <NavLink to="/wilayah?filter=way-jepara" className="dropdown-item">
-                  <MapPin size={16} /> Kec. Way Jepara
-                </NavLink>
-                <NavLink to="/wilayah?filter=braja-selebah" className="dropdown-item">
-                  <MapPin size={16} /> Kec. Braja Selebah
-                </NavLink>
-              </div>
-            )}
-          </div>
-
+          <NavLink to="/wilayah" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Data Wilayah</NavLink>
           <NavLink to="/personel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
-          <NavLink to="/potensi" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Potensi</NavLink>
+          <NavLink to="/Piket" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Piket</NavLink>
           <NavLink to="/keamanan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Keamanan</NavLink>
           <NavLink to="/analytics" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Analytics</NavLink>
           <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Reports</NavLink>
-        </nav>
+        </div>
 
-        {/* Right Side Actions */}
         <div className="navbar-actions">
-          {/* Notifications */}
-          <div className="notification-wrapper" ref={notificationsRef}>
-            <button 
-              className="action-button notification-button" 
-              title="Notifications"
-              onClick={toggleNotifications}
-              aria-expanded={showNotifications}
-            >
-              <Bell size={20} />
-              <span className="notification-badge">3</span>
+          <div style={{position: 'relative'}} ref={notificationsRef}>
+            <button className="action-button" onClick={toggleNotifications}>
+              <Bell size={20} /> <span className="notification-badge">3</span>
             </button>
-
             {showNotifications && (
-              <div className="notification-dropdown">
-                <div className="notification-header">
-                  <h3>Notifikasi</h3>
-                  <button className="close-notification" onClick={() => setShowNotifications(false)} aria-label="Tutup notifikasi">&times;</button>
+              <div className="notification-dropdown" style={{
+                position: 'absolute', top: '120%', right: 0, width: '300px', 
+                background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', 
+                borderRadius: '12px', padding: '1rem', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'white'}}>
+                  <h3 style={{margin: 0, fontSize: '1rem'}}>Notifikasi</h3>
+                  <button onClick={() => setShowNotifications(false)} style={{background:'none', border:'none', color:'white', cursor:'pointer'}}><X size={16}/></button>
                 </div>
-                <div className="notification-list">
+                <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
                   {notifications.map((notif) => (
-                    <div key={notif.id} className={`notification-item ${notif.read ? 'read' : 'unread'}`}>
-                      <div className="notification-content">
-                        <h4 className="notification-title">{notif.title}</h4>
-                        <p className="notification-message">{notif.message}</p>
-                        <span className="notification-time">{notif.time}</span>
-                      </div>
-                      {!notif.read && <div className="notification-dot"></div>}
+                    <div key={notif.id} style={{padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '0.85rem', color: '#cbd5e1'}}>
+                      <div style={{fontWeight: '600', color: 'white'}}>{notif.title}</div>
+                      <div>{notif.message}</div>
                     </div>
                   ))}
-                </div>
-                <div className="notification-footer">
-                  <button className="view-all-button">Lihat Semua Notifikasi</button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* User Menu */}
-          <div className="user-menu-wrapper" ref={userMenuRef}>
-            <button 
-              className="action-button user-button"
-              onClick={toggleUserMenu}
-              title="User Menu"
-              aria-expanded={showUserMenu}
-            >
-              <div className="user-avatar">IFN</div>
+          <div style={{position: 'relative'}} ref={userMenuRef}>
+            <button className="action-button" onClick={toggleUserMenu}>
+              <span>IFN</span>
             </button>
-
             {showUserMenu && (
-              <div className="user-dropdown">
-                <div className="user-dropdown-header">
-                  <div className="user-avatar-large">IFN</div>
-                  <div>
-                    <p className="user-name">Muhammad Irfan</p>
-                    <p className="user-email">irfan@koramil.mil.id</p>
-                  </div>
+              <div className="user-dropdown" style={{
+                position: 'absolute', top: '120%', right: 0, width: '200px', 
+                background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', 
+                borderRadius: '12px', padding: '0.5rem', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.5rem'}}>
+                  <div style={{color: 'white', fontWeight: '600'}}>Muhammad Irfan</div>
+                  <div style={{fontSize: '0.75rem', color: '#94a3b8'}}>irfan@koramil.mil.id</div>
                 </div>
-                <div className="dropdown-divider"></div>
-                <NavLink to="/profile" className="dropdown-item">
-                  <User size={18} />
-                  Profile
+                <NavLink to="/profile" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', color: '#cbd5e1', textDecoration: 'none', borderRadius: '6px'}}>
+                  <User size={16} /> Profile
                 </NavLink>
-                <NavLink to="/settings" className="dropdown-item">
-                  <Settings size={18} />
-                  Settings
-                </NavLink>
-                <div className="dropdown-divider"></div>
-                <button onClick={() => console.log('Logout')} className="dropdown-item logout">
-                  <LogOut size={18} />
-                  Logout
+                <button onClick={() => console.log('Logout')} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', width: '100%', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', borderRadius: '6px', textAlign: 'left'}}>
+                  <LogOut size={16} /> Logout
                 </button>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
           <button 
-            className="menu-toggle"
+            className="action-button mobile-toggle-btn"
             onClick={toggleMobileMenu}
-            title="Toggle Menu"
-            aria-expanded={isMobileMenuOpen}
+            style={{ display: 'none' }}
           >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
+          <style>{`@media (max-width: 1024px) { .mobile-toggle-btn { display: flex !important; } }`}</style>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <nav className="mobile-menu">
-          <NavLink to="/" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
-            <LayoutDashboard size={20} style={{ marginRight: '12px' }} /> Dashboard
-          </NavLink>
-          <NavLink to="/wilayah?filter=way-jepara" className={({ isActive }) => `mobile-menu-link ${location.search.includes('way-jepara') ? 'active' : ''}`}>
-            <MapPin size={20} style={{ marginRight: '12px' }} /> Data Way Jepara
-          </NavLink>
-          <NavLink to="/wilayah?filter=braja-selebah" className={({ isActive }) => `mobile-menu-link ${location.search.includes('braja-selebah') ? 'active' : ''}`}>
-            <MapPin size={20} style={{ marginRight: '12px' }} /> Data Braja Selebah
-          </NavLink>
-          <NavLink to="/personel" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
-            <Users size={20} style={{ marginRight: '12px' }} /> Personel
-          </NavLink>
-          <NavLink to="/potensi" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
-            <TrendingUp size={20} style={{ marginRight: '12px' }} /> Potensi Wilayah
-          </NavLink>
-          <NavLink to="/keamanan" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
-            <Shield size={20} style={{ marginRight: '12px' }} /> Keamanan
-          </NavLink>
-          <NavLink to="/analytics" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
-            <PieChart size={20} style={{ marginRight: '12px' }} /> Analytics
-          </NavLink>
-          <NavLink to="/reports" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
-            <FileText size={20} style={{ marginRight: '12px' }} /> Reports
-          </NavLink>
-          <div className="mobile-menu-divider"></div>
-          <NavLink to="/profile" className="mobile-menu-link">
-            <User size={20} style={{ marginRight: '12px' }} /> Profile
-          </NavLink>
-          <button onClick={() => console.log('Logout')} className="mobile-menu-link logout">
-            <LogOut size={20} style={{ marginRight: '12px' }} /> Logout
-          </button>
-        </nav>
+        <div className="mobile-menu" style={{
+          position: 'fixed', top: '70px', left: '1rem', right: '1rem', 
+          background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(12px)', 
+          borderRadius: '16px', padding: '1rem', border: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 999
+        }}>
+          <NavLink to="/" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</NavLink>
+          <NavLink to="/wilayah" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Data Wilayah</NavLink>
+          <NavLink to="/personel" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Personel</NavLink>
+          <NavLink to="/Piket" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Piket</NavLink>
+          <NavLink to="/keamanan" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Keamanan</NavLink>
+          <NavLink to="/analytics" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Analytics</NavLink>
+          <NavLink to="/reports" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Reports</NavLink>
+        </div>
       )}
-    </header>
+    </nav>
   );
 }
