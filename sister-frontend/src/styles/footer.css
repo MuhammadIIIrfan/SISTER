@@ -3,6 +3,8 @@
   color: #e2e8f0;
   padding: 3rem 2rem 1.5rem;
   border-top: 4px solid #059669;
+  position: relative;
+  z-index: 10;
 }
 
 .footer-content {

@@ -1,4 +1,4 @@
-import { Menu, X, Bell, User, Settings, LogOut, LayoutDashboard, MapPin, Users, FileText, TrendingUp, Shield, PieChart } from 'lucide-react';
+import { Menu, X, Bell, User, Settings, LogOut, LayoutDashboard, MapPin, Users, FileText, Shield, Map } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import '../styles/navbar.css';
@@ -83,9 +83,9 @@ export default function Navbar() {
           <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
           <NavLink to="/wilayah" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Data Wilayah</NavLink>
           <NavLink to="/personel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
-          <NavLink to="/Piket" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Piket</NavLink>
+          <NavLink to="/piket" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Piket</NavLink>
           <NavLink to="/keamanan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Keamanan</NavLink>
-          <NavLink to="/analytics" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Analytics</NavLink>
+          <NavLink to="/peta-spasial" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Peta Spasial</NavLink>
           <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Reports</NavLink>
         </div>
 
@@ -161,9 +161,9 @@ export default function Navbar() {
           <NavLink to="/" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</NavLink>
           <NavLink to="/wilayah" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Data Wilayah</NavLink>
           <NavLink to="/personel" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Personel</NavLink>
-          <NavLink to="/Piket" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Piket</NavLink>
+          <NavLink to="/piket" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Piket</NavLink>
           <NavLink to="/keamanan" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Keamanan</NavLink>
-          <NavLink to="/analytics" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Analytics</NavLink>
+          <NavLink to="/peta-spasial" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Peta Spasial</NavLink>
           <NavLink to="/reports" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Reports</NavLink>
         </div>
       )}

@@ -5,20 +5,15 @@ import backgroundAsset from '../assets/koramil09.jpg';
 
 export default function Dashboard() {
   const koramil = {
-    name: 'Koramil 429-09 Way Jepara',
-    location: 'Way Jepara, Lampung',
     phone: '(021) 123-4567',
-    email: 'koramil429-09@mil.id',
-    established: '2010'
+    email: 'koramil429-09@mil.id'
   };
 
   return (
-    <div className="dashboard-container" style={{ 
-      backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(${backgroundAsset})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed'
-    }}>
+    <div className="dashboard-container">
+      <div className="dashboard-bg-animate" style={{ backgroundImage: `url(${backgroundAsset})` }}></div>
+      <div className="dashboard-bg-overlay"></div>
+
       {/* Hero Section */}
       <div className="hero-section">
         <div className="hero-content">
@@ -41,7 +36,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="hero-decoration"></div>
       </div>
 
       {/* Mission & Vision */}

@@ -1,10 +1,8 @@
-import { MapPin, Phone, Mail, Facebook, Twitter, Instagram, Heart } from 'lucide-react';
-import logoAsset from '../assets/LOGO_KOREM_043.png';
+import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 import '../styles/footer.css';
+import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
-
   return (
     <footer className="footer">
       <div className="footer-content">
@@ -14,17 +12,18 @@ export default function Footer() {
             <div className="brand-header">
               <img src={logoAsset} alt="Logo" className="footer-logo" />
               <div>
-                <h3 className="footer-title">SISTER</h3>
+                <h3 className="footer-title">KORAMIL 429-09</h3>
+                <p className="footer-subtitle">WAY JEPARA</p>
               </div>
             </div>
             <p className="footer-desc">
-              Sistem Informasi Teritorial Koramil 0429-09 Way Jepara
-
+              Melayani masyarakat dengan integritas, menjaga kedaulatan negara, dan membangun wilayah yang aman serta sejahtera bersama rakyat.
             </p>
             <div className="social-links">
-              <a href="#" className="social-link" aria-label="Facebook"><Facebook size={18} /></a>
-              <a href="#" className="social-link" aria-label="Twitter"><Twitter size={18} /></a>
-              <a href="#" className="social-link" aria-label="Instagram"><Instagram size={18} /></a>
+              <a href="#" className="social-link"><Facebook size={18} /></a>
+              <a href="#" className="social-link"><Instagram size={18} /></a>
+              <a href="#" className="social-link"><Twitter size={18} /></a>
+              <a href="#" className="social-link"><Youtube size={18} /></a>
             </div>
           </div>
 
@@ -32,25 +31,27 @@ export default function Footer() {
           <div className="footer-contact">
             <h4 className="section-heading">Hubungi Kami</h4>
             <div className="contact-list">
-              <a href="https://maps.app.goo.gl/WjQUPeWAMJDjhpJq8" target="_blank" rel="noreferrer" className="contact-item">
+              <a href="#" className="contact-item">
                 <MapPin size={18} className="contact-icon" />
-                <span>Way Jepara, Lampung Timur</span>
+                <span>Jl. Raya Way Jepara, Lampung Timur</span>
               </a>
-              <a href="tel:+62211234567" className="contact-item">
+              <a href="#" className="contact-item">
                 <Phone size={18} className="contact-icon" />
                 <span>(021) 123-4567</span>
               </a>
-              <a href="mailto:info@sister.mil.id" className="contact-item">
+              <a href="#" className="contact-item">
                 <Mail size={18} className="contact-icon" />
-                <span>info@sister.mil.id</span>
+                <span>koramil429-09@mil.id</span>
               </a>
             </div>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; {currentYear} Koramil 429-09. All rights reserved.</p>
-          <p className="made-with">Made with by Muhammad Irfan Efendi</p>
+          <span>&copy; 2024 Sistem Informasi Teritorial Koramil 429-09. All rights reserved.</span>
+          <div className="made-with">
+            <span>SISTER v1.0</span>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,18 +1,17 @@
 /* Personel Page Styling */
 
 .personel-container {
-  padding: 2.5rem;
-  background: #f8fafc;
+  padding: 120px 2rem 2rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 100%);
   min-height: calc(100vh - 80px - 200px);
 }
 
 .personel-header {
   margin-bottom: 2.5rem;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+  text-align: center;
 }
 
 .personel-header h1 {
@@ -218,7 +217,7 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .personel-container {
-    padding: 1.5rem;
+    padding: 110px 1.5rem 1.5rem;
   }
 
   .personel-header h1 {
@@ -236,7 +235,7 @@
 
 @media (max-width: 768px) {
   .personel-container {
-    padding: 1rem;
+    padding: 90px 1rem 1rem;
   }
 
   .personel-header h1 {
@@ -245,7 +244,7 @@
 
   .personel-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
   }
 
   .personel-controls {
@@ -269,7 +268,7 @@
 
 @media (max-width: 480px) {
   .personel-container {
-    padding: 0.75rem;
+    padding: 85px 0.75rem 0.75rem;
   }
 
   .personel-header h1 {
