@@ -1,4 +1,4 @@
-import { Users, MapPin, Phone, Mail, Award, Building2, Zap, BookOpen, Heart } from 'lucide-react';
+import { Users, Phone, Mail, Award, Building2, Zap, BookOpen, Heart } from 'lucide-react';
 import '../styles/dashboard.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 import backgroundAsset from '../assets/koramil09.jpg';
@@ -11,37 +11,6 @@ export default function Dashboard() {
     email: 'koramil429-09@mil.id',
     established: '2010'
   };
-
-  const stats = [
-    {
-      title: 'Total Anggota',
-      value: '1,245',
-      icon: Users,
-      color: '#3b82f6',
-      bgColor: '#eff6ff'
-    },
-    {
-      title: 'Wilayah Operasi',
-      value: '48 Desa',
-      icon: MapPin,
-      color: '#10b981',
-      bgColor: '#f0fdf4'
-    },
-    {
-      title: 'Status Siaga',
-      value: 'Siaga I',
-      icon: Zap,
-      color: '#f59e0b',
-      bgColor: '#fffbf0'
-    },
-    {
-      title: 'Tahun Berdiri',
-      value: '2010',
-      icon: Award,
-      color: '#8b5cf6',
-      bgColor: '#faf5ff'
-    }
-  ];
 
   const units = [
     {
@@ -121,25 +90,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="hero-decoration"></div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        {stats.map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <div key={index} className="stat-card">
-              <div 
-                className="stat-icon-wrapper"
-                style={{ backgroundColor: stat.bgColor }}
-              >
-                <IconComponent size={28} color={stat.color} />
-              </div>
-              <h3 className="stat-title">{stat.title}</h3>
-              <p className="stat-value">{stat.value}</p>
-            </div>
-          );
-        })}
       </div>
 
       {/* Organizational Units */}

@@ -1,27 +1,30 @@
-import { Users, Briefcase, Award, Heart, Search, Filter, Download, Phone, Mail } from 'lucide-react';
+import { Users, Search, Filter } from 'lucide-react';
 import '../styles/personel.css';
 
 export default function Personel() {
+
   const personelData = [
     {
       id: 1,
       nama: 'Kapten Ahmad Wijaya',
       nrp: '17654321',
-      jabatan: 'Danrem',
+      jabatan: 'Danramil',
       pangkat: 'Kapten',
-      wilayah: 'Rejo Agung',
+      wilayah: 'Way Jepara',
       status: 'Aktif',
-      kontak: '081234567890'
+      kontak: '081234567890',
+      foto: `https://i.pravatar.cc/150?u=1`
     },
     {
       id: 2,
-      nama: 'Letnan Budi Santoso',
+      nama: 'Peltu Budi Santoso',
       nrp: '18654322',
-      jabatan: 'Danki',
-      pangkat: 'Letnan',
-      wilayah: 'Mekar Sari',
+      jabatan: 'Batuud',
+      pangkat: 'Peltu',
+      wilayah: 'Way Jepara',
       status: 'Aktif',
-      kontak: '081234567891'
+      kontak: '081234567891',
+      foto: `https://i.pravatar.cc/150?u=2`
     },
     {
       id: 3,
@@ -31,7 +34,8 @@ export default function Personel() {
       pangkat: 'Sersan',
       wilayah: 'Marga Asih',
       status: 'Aktif',
-      kontak: '081234567892'
+      kontak: '081234567892',
+      foto: `https://i.pravatar.cc/150?u=3`
     },
     {
       id: 4,
@@ -41,7 +45,8 @@ export default function Personel() {
       pangkat: 'Kopral',
       wilayah: 'Sumber Rejeki',
       status: 'Aktif',
-      kontak: '081234567893'
+      kontak: '081234567893',
+      foto: `https://i.pravatar.cc/150?u=4`
     },
     {
       id: 5,
@@ -51,7 +56,8 @@ export default function Personel() {
       pangkat: 'Serda',
       wilayah: 'Lestari Makmur',
       status: 'Aktif',
-      kontak: '081234567894'
+      kontak: '081234567894',
+      foto: `https://i.pravatar.cc/150?u=5`
     },
     {
       id: 6,
@@ -61,61 +67,26 @@ export default function Personel() {
       pangkat: 'Kopral',
       wilayah: 'Cahaya Baru',
       status: 'Aktif',
-      kontak: '081234567895'
+      kontak: '081234567895',
+      foto: `https://i.pravatar.cc/150?u=6`
     }
   ];
 
-  const statistics = [
-    {
-      title: 'Total Personel',
-      value: '1,245',
-      icon: Users,
-      color: '#059669'
-    },
-    {
-      title: 'Babinsa Aktif',
-      value: '48',
-      icon: Briefcase,
-      color: '#10b981'
-    },
-    {
-      title: 'Personel Terlatih',
-      value: '1,189',
-      icon: Award,
-      color: '#059669'
-    },
-    {
-      title: 'Kepuasan Kerja',
-      value: '4.8/5',
-      icon: Heart,
-      color: '#10b981'
-    }
-  ];
+  const leadershipData = personelData.filter(p => ['Danramil', 'Batuud'].includes(p.jabatan));
+  const babinsaData = personelData.filter(p => p.jabatan === 'Babinsa');
+
+  // Judul dinamis
+  const pageTitle = 'Struktur Organisasi Personel';
+  const pageSubtitle = 'Struktur pimpinan dan daftar Babinsa Koramil 429-09';
 
   return (
     <div className="personel-container">
       {/* Header */}
       <div className="personel-header">
         <div>
-          <h1 className="page-title">Data Personel</h1>
-          <p className="page-subtitle">Informasi lengkap Babinsa, personel, kompetensi, dan penugasan Koramil 429-09</p>
+          <h1 className="page-title">{pageTitle}</h1>
+          <p className="page-subtitle">{pageSubtitle}</p>
         </div>
-      </div>
-
-      {/* Statistics */}
-      <div className="stats-grid">
-        {statistics.map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <div key={index} className="stat-card-personel">
-              <div className="stat-icon" style={{ color: stat.color }}>
-                <IconComponent size={28} />
-              </div>
-              <h3 className="stat-title">{stat.title}</h3>
-              <p className="stat-value">{stat.value}</p>
-            </div>
-          );
-        })}
       </div>
 
       {/* Controls */}
@@ -125,68 +96,49 @@ export default function Personel() {
           <input type="text" placeholder="Cari nama atau NRP personel..." />
         </div>
         <div className="control-buttons">
-          <button className="btn-icon">
-            <Filter size={20} />
-            Filter
-          </button>
-          <button className="btn-icon">
-            <Download size={20} />
-            Export
-          </button>
+          {/* Filter buttons can be added here if needed */}
         </div>
       </div>
 
-      {/* Data Table */}
-      <div className="personel-table-wrapper">
-        <table className="personel-table">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Personel</th>
-              <th>NRP</th>
-              <th>Pangkat</th>
-              <th>Jabatan</th>
-              <th>Wilayah</th>
-              <th>Status</th>
-              <th>Kontak</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {personelData.map((item, index) => (
-              <tr key={item.id}>
-                <td>{index + 1}</td>
-                <td className="cell-nama">
-                  <Users size={18} />
-                  {item.nama}
-                </td>
-                <td>{item.nrp}</td>
-                <td>
-                  <span className="badge badge-primary">{item.pangkat}</span>
-                </td>
-                <td>{item.jabatan}</td>
-                <td>{item.wilayah}</td>
-                <td>
-                  <span className="badge badge-success">{item.status}</span>
-                </td>
-                <td>
-                  <div className="contact-info">
-                    <Phone size={14} />
-                    <span>{item.kontak}</span>
-                  </div>
-                </td>
-                <td>
-                  <button className="btn-action">Detail</button>
-                </td>
-              </tr>
+      {/* Organogram View */}
+      <div className="organogram-view">
+        <div className="leadership-section">
+          <h2 className="organogram-section-title">Pimpinan & Staf Utama</h2>
+          <div className="leadership-cards">
+            {leadershipData.map((person) => (
+              <div key={person.id} className="personel-card-organogram">
+                <div className="personel-photo">
+                  <img src={person.foto} alt={person.nama} />
+                </div>
+                <div className="personel-details">
+                  <h3 className="personel-name">{person.nama}</h3>
+                  <p className="personel-jabatan">{person.jabatan}</p>
+                  <span className="personel-pangkat">{person.pangkat}</span>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
 
-      {/* Summary */}
-      <div className="personel-summary">
-        <p>Total: <strong>{personelData.length}</strong> personel ditampilkan | Halaman 1 dari 21</p>
+        <div className="organogram-divider"></div>
+
+        <div className="babinsa-section">
+          <h2 className="organogram-section-title">Bintara Pembina Desa (Babinsa)</h2>
+          <div className="babinsa-grid">
+            {babinsaData.map(person => (
+              <div key={person.id} className="personel-card-organogram babinsa-card">
+                 <div className="personel-photo">
+                  <img src={person.foto} alt={person.nama} />
+                </div>
+                <div className="personel-details">
+                  <h3 className="personel-name">{person.nama}</h3>
+                  <p className="personel-jabatan">Babinsa {person.wilayah}</p>
+                  <span className="personel-pangkat">{person.pangkat}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

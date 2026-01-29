@@ -1,4 +1,4 @@
-import { Menu, X, Bell, User, Settings, LogOut, LayoutDashboard, MapPin, Users, FileText, TrendingUp, Shield, PieChart } from 'lucide-react';
+import { Menu, X, Bell, User, Settings, LogOut, LayoutDashboard, MapPin, Users, FileText, TrendingUp, Shield, PieChart, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import '../styles/navbar.css';
@@ -23,22 +23,46 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [showDataMenu, setShowDataMenu] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
 
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
+  const dataMenuRef = useRef(null);
+  const lastScrollY = useRef(0);
 
   useOutsideAlerter(userMenuRef, () => setShowUserMenu(false));
   useOutsideAlerter(notificationsRef, () => setShowNotifications(false));
+  useOutsideAlerter(dataMenuRef, () => setShowDataMenu(false));
 
   // Tutup semua menu saat URL berubah
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setShowUserMenu(false);
     setShowNotifications(false);
+    setShowDataMenu(false);
   }, [location]);
+
+  // Deteksi scroll untuk mengubah style navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setIsScrolled(currentScrollY > 20);
+
+      if (currentScrollY > lastScrollY.current && currentScrollY > 70) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleUserMenu = () => setShowUserMenu(!showUserMenu);
@@ -51,7 +75,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="navbar">
+    <header className={`navbar ${isScrolled ? 'scrolled' : ''} ${!isVisible ? 'navbar-hidden' : ''}`}>
       <div className="navbar-container">
         {/* Logo and Brand */}
         <div className="navbar-left">
@@ -60,8 +84,7 @@ export default function Navbar() {
               <img src={logoAsset} alt="Logo" className="logo-image" />
             </div>
             <div className="brand-text">
-              <h1 className="app-title">SISTEM INFORMASI TERITORIAL</h1>
-              <p className="app-subtitle">Koramil 429-09 Way Jepara</p>
+              <h1 className="app-title">SISTER.</h1>
             </div>
           </div>
         </div>
@@ -69,7 +92,28 @@ export default function Navbar() {
         {/* Center Navigation - Hidden on mobile */}
         <nav className="navbar-nav">
           <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
-          <NavLink to="/wilayah" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Data</NavLink>
+          
+          {/* Dropdown Data Wilayah */}
+          <div className="nav-dropdown-wrapper" ref={dataMenuRef}>
+            <button 
+              className={`nav-link ${location.pathname.includes('/wilayah') ? 'active' : ''}`}
+              onClick={() => setShowDataMenu(!showDataMenu)}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              Data <ChevronDown size={14} style={{ transform: showDataMenu ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+            </button>
+            {showDataMenu && (
+              <div className="nav-dropdown-content">
+                <NavLink to="/wilayah?filter=way-jepara" className="dropdown-item">
+                  <MapPin size={16} /> Kec. Way Jepara
+                </NavLink>
+                <NavLink to="/wilayah?filter=braja-selebah" className="dropdown-item">
+                  <MapPin size={16} /> Kec. Braja Selebah
+                </NavLink>
+              </div>
+            )}
+          </div>
+
           <NavLink to="/personel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
           <NavLink to="/potensi" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Potensi</NavLink>
           <NavLink to="/keamanan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Keamanan</NavLink>
@@ -172,8 +216,11 @@ export default function Navbar() {
           <NavLink to="/" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
             <LayoutDashboard size={20} style={{ marginRight: '12px' }} /> Dashboard
           </NavLink>
-          <NavLink to="/wilayah" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
-            <MapPin size={20} style={{ marginRight: '12px' }} /> Data Wilayah
+          <NavLink to="/wilayah?filter=way-jepara" className={({ isActive }) => `mobile-menu-link ${location.search.includes('way-jepara') ? 'active' : ''}`}>
+            <MapPin size={20} style={{ marginRight: '12px' }} /> Data Way Jepara
+          </NavLink>
+          <NavLink to="/wilayah?filter=braja-selebah" className={({ isActive }) => `mobile-menu-link ${location.search.includes('braja-selebah') ? 'active' : ''}`}>
+            <MapPin size={20} style={{ marginRight: '12px' }} /> Data Braja Selebah
           </NavLink>
           <NavLink to="/personel" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
             <Users size={20} style={{ marginRight: '12px' }} /> Personel
