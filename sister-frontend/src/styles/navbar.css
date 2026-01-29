@@ -13,11 +13,16 @@
 }
 
 .navbar-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1.3rem 1.5rem;
+  width: 100%;
+  padding: 0.75rem 1.5rem; /* Navbar lebih tipis */
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-left {
+  display: flex;
   align-items: center;
   gap: 1rem;
 }
@@ -37,8 +42,8 @@
 }
 
 .logo-icon {
-  width: 50px;
-  height: 50px;
+  width: 40px; /* Ukuran logo disesuaikan */
+  height: 40px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   display: flex;
@@ -50,8 +55,8 @@
 }
 
 .logo-image {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -99,7 +104,7 @@
 .nav-link {
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 0.75rem;
   border-radius: 8px;
   font-size: 0.95rem;
   font-weight: 500;
@@ -234,6 +239,7 @@
   right: 0;
   width: 380px;
   max-height: 450px;
+  max-width: 90vw; /* Mencegah overflow horizontal */
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -435,6 +441,7 @@
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   width: 280px;
+  max-width: 90vw;
   overflow: hidden;
   animation: slideDown 0.3s ease;
   z-index: 1001;
@@ -529,55 +536,89 @@
 
 /* Mobile Menu */
 .mobile-menu {
-  display: none;
-  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(6, 95, 70, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1rem 2rem;
+  padding: 1.5rem;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideDownMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 999;
+}
+
+@keyframes slideDownMobile {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .mobile-menu-link {
-  color: rgba(255, 255, 255, 0.9);
+  color: #fff;
   text-decoration: none;
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  display: block;
-  background: none;
-  border: none;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   width: 100%;
   text-align: left;
 }
 
 .mobile-menu-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(4px);
 }
 
 .mobile-menu-link.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-left: 3px solid #a7f3d0;
-  padding-left: calc(0.75rem - 3px);
+  background: linear-gradient(90deg, rgba(167, 243, 208, 0.2), transparent);
+  color: #a7f3d0;
+  border-left: 4px solid #a7f3d0;
+  padding-left: calc(1.25rem - 4px);
+  border-color: rgba(167, 243, 208, 0.1);
 }
 
 .mobile-menu-link.logout {
   color: #fca5a5;
+  margin-top: 0.5rem;
+  border-color: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.mobile-menu-link.logout:hover {
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .mobile-menu-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
   .navbar-nav {
     display: none;
+  }
+  
+  .menu-toggle {
+    display: flex;
   }
 }
 
@@ -596,17 +637,13 @@
   }
 
   .logo-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
 
   .logo-circle {
     width: 24px;
     height: 24px;
-  }
-
-  .menu-toggle {
-    display: flex;
   }
 
   .navbar-actions {
@@ -616,10 +653,6 @@
   .action-button {
     width: 36px;
     height: 36px;
-  }
-
-  .mobile-menu {
-    display: flex;
   }
 
   .user-dropdown {
@@ -633,12 +666,7 @@
   }
 
   .brand-text {
-    min-width: 0;
-  }
-
-  .app-title {
-    font-size: 0.95rem;
-    letter-spacing: 1px;
+    display: none; /* Sembunyikan teks panjang di HP agar layout lega */
   }
 
   .action-button {
@@ -660,8 +688,23 @@
     padding: 1rem;
   }
 
+  /* Dropdown Notifikasi & User menjadi Fixed/Modal di Mobile */
+  .notification-dropdown {
+    position: fixed;
+    top: 70px;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    max-width: none;
+  }
+
   .user-dropdown {
-    width: 220px;
+    position: fixed;
+    top: 70px;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    max-width: none;
   }
 
   .user-dropdown-header {

@@ -1,7 +1,6 @@
-import { Menu, X, Bell, User, Settings, LogOut } from 'lucide-react';
-import { useState, useRef, useEffect, useContext } from 'react';
+import { Menu, X, Bell, User, Settings, LogOut, LayoutDashboard, MapPin, Users, FileText, TrendingUp, Shield, PieChart } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { SidebarContext } from '../context/SidebarContext';
 import '../styles/navbar.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 
@@ -27,7 +26,6 @@ export default function Navbar() {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { isSidebarOpen, toggleSidebar } = useContext(SidebarContext);
 
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -56,13 +54,15 @@ export default function Navbar() {
     <header className="navbar">
       <div className="navbar-container">
         {/* Logo and Brand */}
-        <div className="navbar-brand" onClick={() => navigate('/')}>
-          <div className="logo-icon">
-            <img src={logoAsset} alt="Logo" className="logo-image" />
-          </div>
-          <div className="brand-text">
-            <h1 className="app-title">SISTEM INFORMASI TERITORIAL</h1>
-            <p className="app-subtitle">Koramil 429-09 Way Jepara</p>
+        <div className="navbar-left">
+          <div className="navbar-brand" onClick={() => navigate('/')}>
+            <div className="logo-icon">
+              <img src={logoAsset} alt="Logo" className="logo-image" />
+            </div>
+            <div className="brand-text">
+              <h1 className="app-title">SISTEM INFORMASI TERITORIAL</h1>
+              <p className="app-subtitle">Koramil 429-09 Way Jepara</p>
+            </div>
           </div>
         </div>
 
@@ -71,6 +71,9 @@ export default function Navbar() {
           <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
           <NavLink to="/wilayah" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Data</NavLink>
           <NavLink to="/personel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
+          <NavLink to="/potensi" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Potensi</NavLink>
+          <NavLink to="/keamanan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Keamanan</NavLink>
+          <NavLink to="/analytics" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Analytics</NavLink>
           <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Reports</NavLink>
         </nav>
 
@@ -166,13 +169,34 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <nav className="mobile-menu">
-          <NavLink to="/" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
-          <NavLink to="/wilayah" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Data</NavLink>
-          <NavLink to="/personel" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
-          <NavLink to="/reports" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>Reports</NavLink>
+          <NavLink to="/" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
+            <LayoutDashboard size={20} style={{ marginRight: '12px' }} /> Dashboard
+          </NavLink>
+          <NavLink to="/wilayah" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
+            <MapPin size={20} style={{ marginRight: '12px' }} /> Data Wilayah
+          </NavLink>
+          <NavLink to="/personel" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
+            <Users size={20} style={{ marginRight: '12px' }} /> Personel
+          </NavLink>
+          <NavLink to="/potensi" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
+            <TrendingUp size={20} style={{ marginRight: '12px' }} /> Potensi Wilayah
+          </NavLink>
+          <NavLink to="/keamanan" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
+            <Shield size={20} style={{ marginRight: '12px' }} /> Keamanan
+          </NavLink>
+          <NavLink to="/analytics" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
+            <PieChart size={20} style={{ marginRight: '12px' }} /> Analytics
+          </NavLink>
+          <NavLink to="/reports" className={({ isActive }) => `mobile-menu-link ${isActive ? 'active' : ''}`}>
+            <FileText size={20} style={{ marginRight: '12px' }} /> Reports
+          </NavLink>
           <div className="mobile-menu-divider"></div>
-          <NavLink to="/profile" className="mobile-menu-link">Profile</NavLink>
-          <button onClick={() => console.log('Logout')} className="mobile-menu-link logout">Logout</button>
+          <NavLink to="/profile" className="mobile-menu-link">
+            <User size={20} style={{ marginRight: '12px' }} /> Profile
+          </NavLink>
+          <button onClick={() => console.log('Logout')} className="mobile-menu-link logout">
+            <LogOut size={20} style={{ marginRight: '12px' }} /> Logout
+          </button>
         </nav>
       )}
     </header>

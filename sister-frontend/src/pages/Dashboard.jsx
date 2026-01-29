@@ -89,9 +89,14 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container" style={{ 
+      backgroundImage: `linear-gradient(0deg, rgba(2, 44, 34, 0.6) 0%, rgba(6, 78, 59, 0.5) 100%), url(${backgroundAsset})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed'
+    }}>
       {/* Hero Section */}
-      <div className="hero-section" style={{ backgroundImage: `linear-gradient(135deg, rgba(6, 95, 70, 0.7) 0%, rgba(4, 120, 87, 0.7) 100%), url(${backgroundAsset})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="hero-section">
         <div className="hero-content">
           <div className="hero-logo">
             <img src={logoAsset} alt="Logo Korem" className="dashboard-logo" />
@@ -99,10 +104,11 @@ export default function Dashboard() {
           <div className="hero-text">
             <h1 className="hero-title">SELAMAT DATANG DI KORAMIL 0429-09 WAY JEPARA</h1>
             <p className="hero-subtitle">LAMPUNG TIMUR</p>
-            <p className="hero-description">
-              Komando Rayon Militer yang berkomitmen untuk keamanan, ketentraman, dan kesejahteraan masyarakat dengan profesionalisme tinggi.
+            <p>
+              
             </p>
           </div>
+
           <div className="hero-info-cards">
             <div className="hero-info-card">
               <Phone size={20} />

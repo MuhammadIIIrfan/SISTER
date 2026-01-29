@@ -1,51 +1,43 @@
 /* Dashboard Container */
 .dashboard-container {
   padding: 2rem;
-  background: #f8fafc; /* Simpler background for the main container */
-  min-height: calc(100vh - 120px);
+  margin: -2rem; /* Mengisi area padding dari parent (.content) */
+  width: calc(100% + 4rem); /* Memastikan lebar mencakup area yang ditarik margin */
+  min-height: calc(100vh - 70px); /* Full height dikurangi tinggi navbar */
+  overflow-x: hidden;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%);
-  background-size: 200% 200%;
-  padding: 4rem 2rem; /* Increased padding */
+  /* Menghapus background box untuk tampilan yang lebih bersih */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 3rem 2rem 4rem;
   color: white;
   margin-bottom: 3rem;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(6, 95, 70, 0.3);
-  border-radius: 16px; /* Added border-radius */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  animation: background-pan 15s ease-in-out infinite;
-}
-
-@keyframes background-pan {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  animation: fadeInUp 0.8s ease-out forwards;
 }
 
 .hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: radial-gradient(circle at top left, rgba(255, 255, 255, 0.1), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.1), transparent 30%);
-  opacity: 0.5;
-  z-index: 1;
+  display: none; /* Menghapus overlay tambahan */
 }
 
 .hero-section::after {
@@ -72,8 +64,8 @@
   width: 120px; /* Slightly smaller */
   height: 120px;
   object-fit: contain;
-  filter: drop-shadow(0 8px 25px rgba(0, 0, 0, 0.4));
-  animation: pulse-logo 3s ease-in-out infinite;
+  filter: drop-shadow(0 8px 25px rgba(255, 255, 255, 0.4));
+  animation: pulse-logo 4s ease-in-out infinite;
 }
 
 @keyframes pulse-logo {
@@ -98,17 +90,17 @@
   line-height: 1.2;
   margin-bottom: 0.5rem;
   letter-spacing: 1px;
-  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
 .hero-subtitle {
   margin: 0;
-  font-size: 1.2rem; /* Slightly smaller for better contrast with title */
+  font-size: 2rem; /* Slightly smaller for better contrast with title */
   opacity: 0.95;
   margin-bottom: 1.5rem; /* Increased margin */
   font-weight: 500; /* Slightly lighter */
   letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .hero-description {
@@ -117,6 +109,7 @@
   opacity: 0.9;
   line-height: 1.7; /* Increased line-height */
   max-width: 600px; /* Wider */
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .hero-info-cards {
@@ -128,8 +121,8 @@
 }
 
 .hero-info-card {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 1rem 1.5rem;
   border-radius: 12px;
   display: flex;
@@ -139,11 +132,11 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .hero-info-card:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   transform: translateY(-4px) scale(1.03);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
@@ -157,15 +150,29 @@
 }
 
 .stat-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95); /* Glass effect but readable */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: 2rem;
   border-radius: 16px; /* Increased radius */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   text-align: center;
   position: relative;
   overflow: hidden;
+  opacity: 0; /* For animation */
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Staggered animation for stats */
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+.stat-card::before {
+  content: '';
 }
 
 .stat-card::before {
@@ -183,7 +190,7 @@
 
 .stat-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 16px 32px rgba(6, 95, 70, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   border-color: var(--stat-card-color, #059669);
 }
 
@@ -247,12 +254,16 @@
 
 /* Section Card */
 .section-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
   border-radius: 16px;
   padding: 2.5rem;
   margin-bottom: 3rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+  animation-delay: 0.5s;
 }
 
 .section-header {
@@ -281,8 +292,8 @@
 }
 
 .unit-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.6); /* Slightly more transparent inside section */
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 12px;
   padding: 2rem;
   text-align: center;
@@ -290,8 +301,8 @@
 }
 
 .unit-card:hover {
-  border-color: #059669;
-  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.12);
+  background: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   transform: translateY(-6px);
 }
 
@@ -328,11 +339,14 @@
 
 /* Card Styling */
 .card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
   border-radius: 16px; /* Consistent radius */
   padding: 1.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
 }
 
 .card-header {
@@ -367,6 +381,10 @@
   text-decoration: underline;
   transform: translateX(2px);
 }
+
+/* Animation delays for content grid */
+.activity-card { animation-delay: 0.6s; }
+.achievements-card { animation-delay: 0.7s; }
 
 /* Activity List */
 .activity-list {
@@ -499,15 +517,18 @@
 
 .mission-card,
 .vision-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
   border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   text-align: center;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
 }
 
 .mission-card::before {
@@ -536,10 +557,13 @@
   transition: transform 0.4s ease-in-out;
 }
 
+.mission-card { animation-delay: 0.8s; }
+.vision-card { animation-delay: 0.9s; }
+
 .mission-card:hover,
 .vision-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
 .mission-card:hover::before,
