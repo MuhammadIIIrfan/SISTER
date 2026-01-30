@@ -71,6 +71,8 @@
   outline: none;
   width: 100%;
   font-size: 0.95rem;
+  background: white;
+  color: #1f2937;
 }
 
 .filter-tabs {
@@ -309,6 +311,7 @@
   border-radius: 8px;
   font-size: 0.95rem;
   background: #f8fafc;
+  color: #1e293b;
 }
 
 .form-textarea {

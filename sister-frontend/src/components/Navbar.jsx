@@ -74,8 +74,8 @@ export default function Navbar() {
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${!isVisible ? 'navbar-hidden' : ''}`}>
       <div className="navbar-container">
         
-        <div className="navbar-brand" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
-          <img src={logoAsset} alt="Logo Sistem" className="brand-logo" />
+        <div className="navbar-brand" onClick={() => navigate('/')}>
+          <img src={logoAsset} alt="Logo" className="brand-logo" />
           <span className="brand-text">SISTER</span>
         </div>
 
@@ -90,24 +90,20 @@ export default function Navbar() {
         </div>
 
         <div className="navbar-actions">
-          <div style={{position: 'relative'}} ref={notificationsRef}>
+          <div style={{position: 'relative'}} ref={notificationsRef} className="notification-wrapper">
             <button className="action-button" onClick={toggleNotifications}>
               <Bell size={20} /> <span className="notification-badge">3</span>
             </button>
             {showNotifications && (
-              <div className="notification-dropdown" style={{
-                position: 'absolute', top: '120%', right: 0, width: '300px', 
-                background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', 
-                borderRadius: '12px', padding: '1rem', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
-              }}>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'white'}}>
-                  <h3 style={{margin: 0, fontSize: '1rem'}}>Notifikasi</h3>
-                  <button onClick={() => setShowNotifications(false)} style={{background:'none', border:'none', color:'white', cursor:'pointer'}}><X size={16}/></button>
+              <div className="notification-dropdown">
+                <div className="dropdown-header">
+                  <h3 className="dropdown-title">Notifikasi</h3>
+                  <button className="dropdown-close" onClick={() => setShowNotifications(false)}><X size={16}/></button>
                 </div>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                <div className="notification-list">
                   {notifications.map((notif) => (
-                    <div key={notif.id} style={{padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '0.85rem', color: '#cbd5e1'}}>
-                      <div style={{fontWeight: '600', color: 'white'}}>{notif.title}</div>
+                    <div key={notif.id} className="notification-item">
+                      <span className="notif-title">{notif.title}</span>
                       <div>{notif.message}</div>
                     </div>
                   ))}
@@ -116,24 +112,20 @@ export default function Navbar() {
             )}
           </div>
 
-          <div style={{position: 'relative'}} ref={userMenuRef}>
+          <div className="user-profile-wrapper" ref={userMenuRef}>
             <button className="action-button" onClick={toggleUserMenu}>
-              <span>IFN</span>
+              <span style={{ fontWeight: 700 }}>IFN</span>
             </button>
             {showUserMenu && (
-              <div className="user-dropdown" style={{
-                position: 'absolute', top: '120%', right: 0, width: '200px', 
-                background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', 
-                borderRadius: '12px', padding: '0.5rem', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
-              }}>
-                <div style={{padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.5rem'}}>
-                  <div style={{color: 'white', fontWeight: '600'}}>Muhammad Irfan</div>
-                  <div style={{fontSize: '0.75rem', color: '#94a3b8'}}>irfan@koramil.mil.id</div>
+              <div className="user-dropdown">
+                <div className="user-info">
+                  <div className="user-name">Muhammad Irfan</div>
+                  <div className="user-email">irfan@koramil.mil.id</div>
                 </div>
-                <NavLink to="/profile" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', color: '#cbd5e1', textDecoration: 'none', borderRadius: '6px'}}>
+                <NavLink to="/profile" className="dropdown-item">
                   <User size={16} /> Profile
                 </NavLink>
-                <button onClick={() => navigate('/login')} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', width: '100%', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', borderRadius: '6px', textAlign: 'left'}}>
+                <button onClick={() => navigate('/login')} className="dropdown-item logout-btn">
                   <LogOut size={16} /> Logout
                 </button>
               </div>
@@ -143,21 +135,14 @@ export default function Navbar() {
           <button 
             className="action-button mobile-toggle-btn"
             onClick={toggleMobileMenu}
-            style={{ display: 'none' }}
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <style>{`@media (max-width: 1024px) { .mobile-toggle-btn { display: flex !important; } }`}</style>
         </div>
       </div>
 
       {isMobileMenuOpen && (
-        <div className="mobile-menu" style={{
-          position: 'fixed', top: '70px', left: '1rem', right: '1rem', 
-          background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(12px)', 
-          borderRadius: '16px', padding: '1rem', border: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 999
-        }}>
+        <div className="mobile-menu">
           <NavLink to="/" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</NavLink>
           <NavLink to="/wilayah" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Data Wilayah</NavLink>
           <NavLink to="/personel" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Personel</NavLink>

@@ -1,222 +1,393 @@
-/* Import Font yang digunakan */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
-  /* Palette Warna Modern */
-  --nav-bg: rgba(15, 23, 42, 0.8); /* Warna gelap transparan */
-  --accent-color: #10b981; /* Warna hijau emerald untuk status aktif/hover */
-  --glass-border: rgba(255, 255, 255, 0.1); /* Border tipis untuk efek kaca */
-  --text-main: #f8fafc;
+  /* Palette Warna Spirit8 */
+  --nav-bg: #000000;
+  --nav-bg-scrolled: rgba(0, 0, 0, 0.95);
+  --nav-bg-glass: rgba(0, 0, 0, 0.8);
+  --accent-color: #ff9d00;
+  --text-main: #ffffff;
   --text-muted: #cbd5e1;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
-/* Navbar Utama - Posisi Fixed */
+/* Navbar Utama */
 .navbar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  padding: 1.5rem 1rem;
-  z-index: 1000;
-  transition: all 0.3s ease;
-  background: transparent !important;
-  box-shadow: none;
+  padding: 0.8rem 0; /* Memberi ruang agar terlihat mengambang */
+  z-index: 9999;
+  transition: all 0.4s ease;
+  /* KUNCI: Hapus background hijau di sini */
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%) !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-/* Kontainer Navbar - Membuat efek "Floating Pill" */
+/* Saat di-scroll, berikan sedikit warna gelap agar tetap terbaca */
+.navbar.scrolled {
+  padding: 0.4rem 0;
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(10px);
+}
+
+.navbar-hidden {
+  transform: translateY(-100%);
+}
+
 .navbar-container {
-  /* Kunci agar navbar melayang di tengah */
-  max-width: 1200px;
-  margin: 0 auto; /* Posisi tengah horizontal */
-  
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 5px 30px;
   
-  /* Styling Glassmorphism & Bentuk */
-  background: rgb(4, 83, 24);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 12px 20px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  /* Buat kontainer transparan tanpa blok warna */
+  background: transparent !important;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
 }
 
-/* --- Bagian Logo (DIPERBAIKI) --- */
+/* --- Brand Section --- */
 .navbar-brand {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  text-decoration: none;
-  flex-shrink: 0; /* Mencegah logo mengecil */
-  gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 9px 15px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+  gap: 12px;
+  cursor: pointer;
 }
 
-/* Style khusus untuk gambar logo Anda */
 .brand-logo {
-  height: 40px; /* Atur tinggi agar proporsional di dalam navbar */
-  width: auto;  /* Lebar menyesuaikan otomatis */
-  display: block;
-  transition: transform 0.3s ease;
-  /* Opsional: Tambahkan sedikit bayangan agar logo lebih 'pop-up' */
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
-}
-
-.navbar-brand:hover .brand-logo {
-  transform: scale(1.05); /* Efek zoom halus saat di-hover */
-}
-
-.navbar-brand:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  height: 35px; /* Sesuaikan ukuran logo agar tidak terlalu besar */
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
 }
 
 .brand-text {
   font-family: 'Montserrat', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 3px;
-  line-height: 1;
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #ffffff !important;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* --- Bagian Menu Navigasi --- */
+/* --- Navigasi Menu --- */
 .navbar-nav {
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* Jarak antar menu */
-  background: rgba(255, 255, 255, 0.05); /* Background tipis pembungkus menu */
-  padding: 0.25rem;
-  border-radius: 12px;
+  flex: 1;
+  justify-content: center;
+  gap: 20px;
+  background: transparent;
+  padding: 0;
 }
 
 .nav-link {
-  color: var(--text-muted);
+  color: #ffffff !important;
   text-decoration: none;
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  font-size: 0.95rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.nav-link:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Status Aktif (misal: Dashboard) */
-.nav-link.active {
-  color: #fff;
-  background: var(--accent-color); /* Hijau menyala */
-  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.4);
-  color: var(--accent-color);
-  background: transparent;
-  box-shadow: none;
+  font-family: 'Montserrat', sans-serif;
   font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 10px 0;
+  position: relative;
+  transition: color 0.3s ease;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* --- Bagian Tombol Aksi (Kanan) --- */
+.nav-link:hover, .nav-link.active {
+  color: #ff9d00 !important; /* Gunakan warna Gold/Orange seperti Spirit8 */
+}
+
+/* Garis bawah tipis untuk link aktif */
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #ff9d00;
+}
+
+/* --- Action Buttons --- */
 .navbar-actions {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 }
 
 .action-button {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
-  height: 44px;
-  min-width: 44px;
-  padding: 0 12px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .action-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #ff9d00;
 }
 
-/* Badge Notifikasi */
+.user-profile-wrapper {
+  position: relative;
+}
+
+/* Legacy styles kept for functionality */
 .notification-badge {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #ef4444; /* Merah */
+  background: #ef4444;
   color: white;
   font-size: 0.7rem;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #000000;
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Dropdowns */
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  z-index: 100;
+  box-shadow: var(--shadow-lg);
+  animation: slideDown 0.2s ease-out forwards;
+  transform-origin: top right;
+  width: 320px;
+}
+
+/* Container utama dropdown */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 15px);
+  right: 0;
+  width: 260px;
+  background: #111827; /* Slate 950 atau Hitam pekat agar solid */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+  animation: slideDown 0.2s ease-out forwards;
+  transform-origin: top right;
+}
+
+/* Dropdown Content Styles */
+.dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: white;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.dropdown-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.dropdown-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: background 0.2s;
+  border: 1px solid transparent;
+}
+
+.notification-item:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.notif-title {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+/* Bagian Header (Nama & Email) */
+.user-info {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.user-name {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 10px;
-  border: 2px solid var(--nav-bg); /* Border agar menyatu dengan background */
+  color: #ffffff !important; /* DIPERBAIKI: Menjadi Putih agar kontras */
+  letter-spacing: 0.5px;
 }
 
-/* Responsif untuk layar yang lebih kecil */
-@media (max-width: 1024px) {
+.user-email {
+  margin: 4px 0 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8; /* Warna abu-abu muted agar email tidak terlalu mencolok */
+  font-weight: 400;
+}
+
+/* Item Menu (Profile & Logout) */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ff9d00; /* Warna aksen orange agar senada dengan link aktif */
+}
+
+/* Khusus Logout */
+.logout-btn {
+  color: #ef4444; /* Merah untuk tanda keluar */
+  margin-top: 4px;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+}
+
+/* Mobile Toggle */
+.mobile-toggle-btn {
+  display: none;
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  position: fixed;
+  top: 80px;
+  left: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 999;
+  box-shadow: var(--shadow-lg);
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu .nav-link {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  width: 100%;
+  display: block;
+}
+
+.mobile-menu .nav-link:hover, 
+.mobile-menu .nav-link.active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mobile-menu .nav-link::after {
+  display: none; /* Disable underline for mobile, use background instead */
+}
+
+/* Animations */
+@keyframes slideDown {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px) scale(0.98); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .navbar-container {
+    padding: 1rem 1.5rem;
+  }
+
   .navbar-nav {
-    display: none; /* Sembunyikan menu di tablet/mobile (butuh tombol toggle) */
+    display: none;
   }
 
-  .navbar {
-    padding: 1rem;
-  }
-
-  .navbar-container {
-    padding: 0.75rem 1.25rem;
-  }
-
-  .brand-logo {
-    height: 36px;
-  }
-}
-
-@media (max-width: 768px) {
-  .navbar {
-    padding: 0.5rem;
-  }
-
-  .navbar-container {
-    padding: 0.5rem 1rem;
-  }
-
-  .navbar-brand {
-    padding: 4px 12px;
-    gap: 0.5rem;
-  }
-
-  .brand-logo {
-    height: 28px;
-  }
-
-  .brand-text {
-    font-size: 0.9rem;
-    letter-spacing: 1px;
-  }
-
-  .action-button {
-    height: 36px;
-    min-width: 36px;
-    padding: 0 8px;
+  .mobile-toggle-btn {
+    display: flex;
   }
   
-  .navbar-actions {
-    gap: 0.5rem;
+  .brand-text {
+    font-size: 1.25rem;
   }
 }

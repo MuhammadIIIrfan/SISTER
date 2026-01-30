@@ -87,6 +87,15 @@ export default function DataWilayah() {
     }
   ];
 
+  const getStatusBadgeClass = (status) => {
+    switch(status) {
+      case 'Aman': return 'badge-success';
+      case 'Waspada': return 'badge-warning';
+      case 'Rawan': return 'badge-danger';
+      default: return 'badge-primary';
+    }
+  };
+
   return (
     <div className="data-wilayah-container">
       {/* Header */}
@@ -156,11 +165,11 @@ export default function DataWilayah() {
                 <td>{item.penduduk} Jiwa</td>
                 <td>{item.kades}</td>
                 <td>
-                  <span className={`badge ${item.status === 'Aman' ? 'badge-success' : 'badge-primary'}`} style={item.status !== 'Aman' ? {backgroundColor: '#fee2e2', color: '#dc2626'} : {}}>{item.status}</span>
+                  <span className={`badge ${getStatusBadgeClass(item.status)}`}>{item.status}</span>
                 </td>
                 <td style={{display: 'flex', gap: '0.5rem'}}>
                   <button className="btn-action" onClick={() => alert(`Detail ${item.desa}`)}>Detail</button>
-                  <button className="btn-action" style={{background: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px'}} onClick={() => handleEditClick(item)}>
+                  <button className="btn-action btn-edit" onClick={() => handleEditClick(item)}>
                     <Edit size={14} /> Edit
                   </button>
                 </td>

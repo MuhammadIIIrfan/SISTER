@@ -3,7 +3,7 @@
 .data-wilayah-container {
   padding: 120px 2rem 2rem;
   background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 100%);
-  min-height: calc(100vh - 80px - 200px);
+  min-height: 100vh;
 }
 
 .data-wilayah-header {
@@ -104,10 +104,11 @@
   outline: none;
   font-size: 0.95rem;
   color: #1f2937;
+  background: transparent;
 }
 
 .search-box input::placeholder {
-  color: #d1d5db;
+  color: #9ca3af;
 }
 
 .control-buttons {
@@ -147,6 +148,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: none;
   overflow: hidden;
   margin-bottom: 1.5rem;
 }
@@ -254,6 +256,17 @@
 
 .btn-action:active {
   transform: translateY(0);
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-edit:hover {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 /* Summary */
@@ -424,7 +437,7 @@
   border-radius: 16px;
   width: 100%;
   max-width: 500px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: modalSlideUp 0.3s ease-out;
 }
 
@@ -438,14 +451,14 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e5e7eb;
   padding-bottom: 1rem;
 }
 
 .modal-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #111827;
   margin: 0;
 }
 
@@ -472,24 +485,25 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #475569;
+  color: #374151;
   margin-bottom: 0.5rem;
 }
 
 .form-input, .form-select {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 0.95rem;
   transition: all 0.2s;
-  background: #f8fafc;
+  background: #fff;
+  color: #111827;
 }
 
 .form-input:focus, .form-select:focus {
   outline: none;
   border-color: #059669;
-  background: white;
+  background: #fff;
   box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
 }
 
@@ -499,14 +513,14 @@
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #e5e7eb;
 }
 
 .btn-cancel {
   padding: 0.75rem 1.5rem;
   background: white;
-  color: #64748b;
-  border: 1px solid #cbd5e1;
+  color: #374151;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
@@ -514,8 +528,8 @@
 }
 
 .btn-cancel:hover {
-  background: #f1f5f9;
-  color: #475569;
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .btn-save {
