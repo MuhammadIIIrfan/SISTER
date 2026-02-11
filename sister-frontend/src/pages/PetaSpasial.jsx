@@ -1,6 +1,7 @@
 import { Map, Layers, Info, MapPin, Users, X, Filter, Shield, AlertTriangle, Navigation } from 'lucide-react';
 import { useState } from 'react';
 import '../styles/peta-spasial.css';
+import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function PetaSpasial() {
   const [activeFilter, setActiveFilter] = useState('all');
@@ -50,6 +51,7 @@ export default function PetaSpasial() {
     <div className="peta-container">
       {/* Header */}
       <div className="peta-header">
+        <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
         <h1 className="page-title">PETA SPASIAL (GIS)</h1>
         <p className="page-subtitle">
           Visualisasi kondisi wilayah Way Jepara secara real-time untuk analisis pertahanan dan keamanan.

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Calendar, Clock, Shield, User, MapPin, Building2 } from 'lucide-react';
 import '../styles/piket.css';
+import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function Piket() {
   const [activeTab, setActiveTab] = useState('koramil');
@@ -96,6 +97,7 @@ export default function Piket() {
       {/* Header */}
       <div className="piket-header">
         <div>
+          <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">JADWAL PIKET & SIAGA</h1>
           <p className="page-subtitle">Monitoring jadwal dinas jaga Koramil, Kodim, dan Korem</p>
         </div>

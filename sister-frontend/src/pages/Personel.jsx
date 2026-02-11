@@ -1,5 +1,6 @@
-import { Users, Search, Filter } from 'lucide-react';
+import { Users, Filter } from 'lucide-react';
 import '../styles/personel.css';
+import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function Personel() {
 
@@ -173,6 +174,7 @@ export default function Personel() {
       {/* Header */}
       <div className="personel-header">
         <div>
+          <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">{pageTitle}</h1>
           <p className="page-subtitle">{pageSubtitle}</p>
         </div>
@@ -180,10 +182,6 @@ export default function Personel() {
 
       {/* Controls */}
       <div className="personel-controls">
-        <div className="search-box">
-          <Search size={20} />
-          <input type="text" placeholder="Cari nama atau NRP personel..." />
-        </div>
         <div className="control-buttons">
           {/* Filter buttons can be added here if needed */}
         </div>
@@ -192,24 +190,20 @@ export default function Personel() {
       {/* Organogram View */}
       <div className="organogram-view">
         <div className="leadership-section">
-          <h2 className="organogram-section-title">Komando & Staf</h2>
+          <h2 className="organogram-section-title">PIMPINAN</h2>
           
           {/* Danramil */}
           {danramil && (
-            <div className="personel-card-organogram" style={{zIndex: 2}}>
+            <div className="personel-card-organogram">
               <div className="personel-photo">
                 <img src={danramil.foto} alt={danramil.nama} />
               </div>
               <div className="personel-details">
                 <h3 className="personel-name">{danramil.nama}</h3>
                 <p className="personel-jabatan">{danramil.jabatan}</p>
-                <span className="personel-pangkat">{danramil.pangkat}</span>
               </div>
             </div>
           )}
-
-          {/* Garis Penghubung Vertikal */}
-          <div style={{width: '2px', height: '3rem', background: '#cbd5e1'}}></div>
 
           {/* Batuud */}
           {batuud && (
@@ -220,16 +214,13 @@ export default function Personel() {
               <div className="personel-details">
                 <h3 className="personel-name">{batuud.nama}</h3>
                 <p className="personel-jabatan">{batuud.jabatan}</p>
-                <span className="personel-pangkat">{batuud.pangkat}</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="organogram-divider"></div>
-
         <div className="babinsa-section">
-          <h2 className="organogram-section-title">Bintara Pembina Desa (Babinsa)</h2>
+          <h2 className="organogram-section-title">BABINSA</h2>
           <div className="babinsa-grid">
             {babinsaData.map(person => (
               <div key={person.id} className="personel-card-organogram babinsa-card">
@@ -239,7 +230,6 @@ export default function Personel() {
                 <div className="personel-details">
                   <h3 className="personel-name">{person.nama}</h3>
                   <p className="personel-jabatan">Babinsa {person.wilayah}</p>
-                  <span className="personel-pangkat">{person.pangkat}</span>
                 </div>
               </div>
             ))}

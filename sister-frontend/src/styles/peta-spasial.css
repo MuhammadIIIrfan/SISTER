@@ -18,6 +18,14 @@
   margin-bottom: 0.5rem;
 }
 
+.page-header-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
+
 .page-subtitle {
   color: #6b7280;
   font-size: 1rem;

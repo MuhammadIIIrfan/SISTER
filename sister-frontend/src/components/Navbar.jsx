@@ -86,7 +86,7 @@ export default function Navbar() {
           <NavLink to="/piket" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Piket</NavLink>
           <NavLink to="/keamanan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Keamanan</NavLink>
           <NavLink to="/peta-spasial" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Peta Spasial</NavLink>
-          <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Reports</NavLink>
+          <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Laporan</NavLink>
         </div>
 
         <div className="navbar-actions">
@@ -149,7 +149,7 @@ export default function Navbar() {
           <NavLink to="/piket" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Piket</NavLink>
           <NavLink to="/keamanan" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Keamanan</NavLink>
           <NavLink to="/peta-spasial" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Peta Spasial</NavLink>
-          <NavLink to="/reports" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Reports</NavLink>
+          <NavLink to="/reports" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Laporan</NavLink>
         </div>
       )}
     </nav>

@@ -1,6 +1,7 @@
 import { Shield, AlertTriangle, CheckCircle, Clock, MapPin, Calendar, Search, Filter } from 'lucide-react';
 import { useState } from 'react';
 import '../styles/keamanan.css';
+import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function Keamanan() {
   const [filter, setFilter] = useState('all');
@@ -69,6 +70,7 @@ export default function Keamanan() {
       {/* Header */}
       <div className="keamanan-header">
         <div>
+          <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">MONITORING KEAMANAN</h1>
           <p className="page-subtitle">Laporan situasi keamanan dan ketertiban masyarakat (Kamtibmas)</p>
         </div>

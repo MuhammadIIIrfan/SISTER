@@ -20,15 +20,35 @@ export default function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulasi login (delay 1.5 detik)
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Simpan token dan info user (role, nama, dll)
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigate('/'); // Redirect ke dashboard
+      } else {
+        alert(data.message || 'Login gagal');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Gagal terhubung ke server');
+    } finally {
       setIsLoading(false);
-      navigate('/'); // Redirect ke dashboard setelah login
-    }, 1500);
+    }
   };
 
   return (

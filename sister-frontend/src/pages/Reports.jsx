@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FileText, Camera, MapPin, Clock, Plus, X, Save, Search, Image as ImageIcon } from 'lucide-react';
 import '../styles/reports.css';
+import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function Reports() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -88,6 +89,7 @@ export default function Reports() {
       {/* Header */}
       <div className="reports-header">
         <div>
+          <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">LAPORAN GIAT BABINSA</h1>
           <p className="page-subtitle">Digitalisasi pelaporan kegiatan harian Babinsa Koramil 429-09</p>
         </div>

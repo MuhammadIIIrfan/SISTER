@@ -1,24 +1,27 @@
 import { MapPin, Users, Home, Search, Filter, Download, AlertTriangle, Edit, X, Save } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import '../styles/data-wilayah.css';
+import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function DataWilayah() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const filter = searchParams.get('filter');
 
+  // Cek User Login dari LocalStorage
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const canEdit = user && (user.role === 'danramil' || user.role === 'babinsa');
+
   // State untuk Data Wilayah (Agar bisa diedit)
-  const [data, setData] = useState([
-    { id: 1, desa: 'Braja Sakti', kecamatan: 'Way Jepara', luas: '12.5 km²', penduduk: '4,500', kades: 'Budi Santoso', status: 'Aman' },
-    { id: 2, desa: 'Labuhan Ratu', kecamatan: 'Way Jepara', luas: '15.2 km²', penduduk: '5,200', kades: 'Hendra Wijaya', status: 'Aman' },
-    { id: 3, desa: 'Braja Asri', kecamatan: 'Way Jepara', luas: '10.8 km²', penduduk: '3,800', kades: 'Slamet Riyadi', status: 'Waspada' },
-    { id: 4, desa: 'Sumber Marga', kecamatan: 'Way Jepara', luas: '11.5 km²', penduduk: '4,150', kades: 'Joko Susilo', status: 'Aman' },
-    { id: 5, desa: 'Braja Yekti', kecamatan: 'Braja Selebah', luas: '14.1 km²', penduduk: '4,100', kades: 'Wawan Setiawan', status: 'Aman' },
-    { id: 6, desa: 'Braja Harjosari', kecamatan: 'Braja Selebah', luas: '11.3 km²', penduduk: '3,900', kades: 'Agus Pratama', status: 'Aman' },
-    { id: 7, desa: 'Braja Gemilang', kecamatan: 'Braja Selebah', luas: '13.7 km²', penduduk: '4,300', kades: 'Rudi Hartono', status: 'Aman' },
-    { id: 8, desa: 'Braja Indah', kecamatan: 'Braja Selebah', luas: '12.0 km²', penduduk: '3,500', kades: 'Dedi Mulyadi', status: 'Rawan' },
-  ]);
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/wilayah')
+      .then(res => res.json())
+      .then(data => setData(data))
+      .catch(err => console.error("Error fetching data:", err));
+  }, []);
 
   // State untuk Modal Edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -40,13 +43,22 @@ export default function DataWilayah() {
   };
 
   // Fungsi menyimpan perubahan
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    setData(prevData => prevData.map(item => 
-      item.id === currentEditData.id ? currentEditData : item
-    ));
-    setIsEditModalOpen(false);
-    // Di sini bisa ditambahkan logika API call ke backend
+    try {
+      const response = await fetch(`http://localhost:5000/api/wilayah/${currentEditData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentEditData)
+      });
+      if (response.ok) {
+        const updatedItem = await response.json();
+        setData(prevData => prevData.map(item => item.id === updatedItem.id ? updatedItem : item));
+        setIsEditModalOpen(false);
+      }
+    } catch (error) {
+      console.error("Error saving data:", error);
+    }
   };
 
   // Filter Logic
@@ -101,6 +113,7 @@ export default function DataWilayah() {
       {/* Header */}
       <div className="data-wilayah-header">
         <div>
+          <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">{pageTitle}</h1>
           <p className="page-subtitle">{pageSubtitle}</p>
         </div>
@@ -169,9 +182,11 @@ export default function DataWilayah() {
                 </td>
                 <td style={{display: 'flex', gap: '0.5rem'}}>
                   <button className="btn-action" onClick={() => alert(`Detail ${item.desa}`)}>Detail</button>
-                  <button className="btn-action btn-edit" onClick={() => handleEditClick(item)}>
-                    <Edit size={14} /> Edit
-                  </button>
+                  {canEdit && (
+                    <button className="btn-action btn-edit" onClick={() => handleEditClick(item)}>
+                      <Edit size={14} /> Edit
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
