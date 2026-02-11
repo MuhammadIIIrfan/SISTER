@@ -111,6 +111,32 @@ async function initDb() {
         description TEXT,
         image TEXT
     )`);
+
+    // 4. Tabel Personel
+    await dbRun(`CREATE TABLE IF NOT EXISTS personel (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nama TEXT,
+        nrp TEXT,
+        jabatan TEXT,
+        pangkat TEXT,
+        wilayah TEXT,
+        status TEXT,
+        kontak TEXT,
+        foto TEXT
+    )`);
+
+    const personelCount = await dbGet("SELECT count(*) as count FROM personel");
+    if (personelCount.count === 0) {
+        console.log("Seeding personel...");
+        const initialPersonel = [
+            ['Kapten Ahmad Wijaya', '17654321', 'Danramil', 'Kapten', 'Way Jepara', 'Aktif', '081234567890', 'https://i.pravatar.cc/150?u=1'],
+            ['Peltu Budi Santoso', '18654322', 'Batuud', 'Peltu', 'Way Jepara', 'Aktif', '081234567891', 'https://i.pravatar.cc/150?u=2'],
+            ['Sersan Rudi Hermawan', '19654323', 'Babinsa', 'Sersan', 'Marga Asih', 'Aktif', '081234567892', 'https://i.pravatar.cc/150?u=3']
+        ];
+        for (const p of initialPersonel) {
+            await dbRun("INSERT INTO personel (nama, nrp, jabatan, pangkat, wilayah, status, kontak, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", p);
+        }
+    }
 }
 
 // --- ENDPOINTS ---
@@ -216,7 +242,16 @@ app.delete('/api/wilayah/:id', async (req, res) => {
 // Ambil semua laporan
 app.get('/api/reports', async (req, res) => {
     try {
-        const rows = await dbAll("SELECT * FROM reports ORDER BY id DESC");
+        const limit = req.query.limit ? parseInt(req.query.limit) : null;
+        let query = "SELECT * FROM reports ORDER BY id DESC";
+        const params = [];
+
+        if (limit) {
+            query += " LIMIT ?";
+            params.push(limit);
+        }
+        
+        const rows = await dbAll(query, params);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -245,6 +280,62 @@ app.delete('/api/reports/:id', async (req, res) => {
         const result = await dbRun("DELETE FROM reports WHERE id = ?", [id]);
         if (result.changes > 0) res.json({ message: "Laporan dihapus", id });
         else res.status(404).json({ message: "Laporan tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// --- ENDPOINTS PERSONEL ---
+
+// Ambil semua personel
+app.get('/api/personel', async (req, res) => {
+    try {
+        const rows = await dbAll("SELECT * FROM personel");
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Tambah personel
+app.post('/api/personel', async (req, res) => {
+    const { nama, nrp, jabatan, pangkat, wilayah, status, kontak, foto } = req.body;
+    try {
+        const result = await dbRun(
+            "INSERT INTO personel (nama, nrp, jabatan, pangkat, wilayah, status, kontak, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [nama, nrp, jabatan, pangkat, wilayah, status, kontak, foto]
+        );
+        const newItem = await dbGet("SELECT * FROM personel WHERE id = ?", [result.lastID]);
+        res.status(201).json(newItem);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Update personel
+app.put('/api/personel/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { nama, nrp, jabatan, pangkat, wilayah, status, kontak, foto } = req.body;
+    try {
+        await dbRun(
+            "UPDATE personel SET nama=?, nrp=?, jabatan=?, pangkat=?, wilayah=?, status=?, kontak=?, foto=? WHERE id=?",
+            [nama, nrp, jabatan, pangkat, wilayah, status, kontak, foto, id]
+        );
+        const updated = await dbGet("SELECT * FROM personel WHERE id = ?", [id]);
+        if (updated) res.json(updated);
+        else res.status(404).json({ message: "Personel tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Hapus personel
+app.delete('/api/personel/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+        const result = await dbRun("DELETE FROM personel WHERE id = ?", [id]);
+        if (result.changes > 0) res.json({ message: "Personel dihapus", id });
+        else res.status(404).json({ message: "Personel tidak ditemukan" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

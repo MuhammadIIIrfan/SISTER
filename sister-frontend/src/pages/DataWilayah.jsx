@@ -1,10 +1,11 @@
-import { MapPin, Users, Home, Search, Filter, Download, AlertTriangle, Edit, X, Save, CheckCircle } from 'lucide-react';
+import { Search, Filter, Download, AlertTriangle, Edit, X, Save, CheckCircle, Home, Map, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/data-wilayah.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 export default function DataWilayah() {
+  const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const filter = searchParams.get('filter');
@@ -15,6 +16,8 @@ export default function DataWilayah() {
 
   // State untuk Data Wilayah (Agar bisa diedit)
   const [data, setData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:5000/api/wilayah')
@@ -26,6 +29,8 @@ export default function DataWilayah() {
   // State untuk Modal Edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentEditData, setCurrentEditData] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [currentDetailData, setCurrentDetailData] = useState(null);
   const [notification, setNotification] = useState(null);
 
   // Auto-hide notification
@@ -40,6 +45,12 @@ export default function DataWilayah() {
   const handleEditClick = (item) => {
     setCurrentEditData({ ...item }); // Copy object agar tidak merubah state langsung
     setIsEditModalOpen(true);
+  };
+
+  // Fungsi membuka modal detail
+  const handleDetailClick = (item) => {
+    setCurrentDetailData(item);
+    setIsDetailModalOpen(true);
   };
 
   // Fungsi menangani perubahan input form
@@ -76,55 +87,46 @@ export default function DataWilayah() {
 
   // Filter Logic
   const filteredData = data.filter(item => {
-    if (filter === 'way-jepara') return item.kecamatan === 'Way Jepara';
-    if (filter === 'braja-selebah') return item.kecamatan === 'Braja Selebah';
-    return true;
+    const matchesSearch = item.desa?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = 
+      filter === 'way-jepara' ? item.kecamatan === 'Way Jepara' :
+      filter === 'braja-selebah' ? item.kecamatan === 'Braja Selebah' :
+      true;
+    return matchesSearch && matchesFilter;
   });
 
-  // Judul Dinamis
-  const pageTitle = filter === 'way-jepara' ? 'Data Wilayah Kec. Way Jepara' : filter === 'braja-selebah' ? 'Data Wilayah Kec. Braja Selebah' : 'DATA TERITORIAL KORAMIL 429-09';
-  const pageSubtitle = filter ? `Daftar desa dan kondisi wilayah di Kecamatan ${filter === 'way-jepara' ? 'Way Jepara' : 'Braja Selebah'}` : 'Data lengkap seluruh wilayah teritorial Koramil 429-09';
-
-  // Hitung statistik dinamis
+  // Hitung Statistik untuk InfoCard
+  const totalDesa = filteredData.length;
+  
   const totalPenduduk = filteredData.reduce((acc, item) => {
-    // Hapus semua karakter non-digit untuk mendapatkan angka murni
-    const cleanStr = item.penduduk?.toString().replace(/[^0-9]/g, '') || '0';
-    const val = parseInt(cleanStr, 10);
+    const val = parseInt(item.penduduk?.toString().replace(/[^0-9]/g, '') || 0, 10);
     return acc + val;
   }, 0);
 
   const totalLuas = filteredData.reduce((acc, item) => {
-    // Ambil angka, ganti koma dengan titik jika ada, lalu parse float
-    const val = parseFloat(item.luas?.toString().replace(',', '.').replace(/[^0-9.]/g, '') || 0);
+    const val = parseFloat(item.luas?.toString().replace(' km²', '').replace(',', '.') || 0);
     return acc + (isNaN(val) ? 0 : val);
   }, 0);
 
-  const statistics = [
-    {
-      title: 'Total Desa',
-      value: filteredData.length,
-      icon: Home,
-      color: '#059669'
-    },
-    {
-      title: 'Total Penduduk',
-      value: `${totalPenduduk.toLocaleString('id-ID')} Jiwa`,
-      icon: Users,
-      color: '#3b82f6'
-    },
-    {
-      title: 'Luas Wilayah',
-      value: `${totalLuas.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} km²`,
-      icon: MapPin,
-      color: '#f59e0b'
-    },
-    {
-      title: 'Titik Rawan',
-      value: filteredData.filter(d => d.status !== 'Aman').length,
-      icon: AlertTriangle,
-      color: '#ef4444'
-    }
-  ];
+  const handleExport = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "No,Nama Desa,Kecamatan,Luas Wilayah,Jumlah Penduduk,Babinsa,Status Keamanan\n"
+      + filteredData.map((item, index) => 
+          `${index + 1},"${item.desa}","${item.kecamatan}","${item.luas}","${item.penduduk}","${item.kades}","${item.status}"`
+      ).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "data_wilayah.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Judul Dinamis
+  const pageTitle = filter === 'way-jepara' ? 'Data Wilayah Kec. Way Jepara' : filter === 'braja-selebah' ? 'Data Wilayah Kec. Braja Selebah' : 'DATA TERITORIAL KORAMIL 429-09';
+  const pageSubtitle = filter ? `Daftar desa dan kondisi wilayah di Kecamatan ${filter === 'way-jepara' ? 'Way Jepara' : 'Braja Selebah'}` : 'Data lengkap seluruh wilayah teritorial Koramil 429-09';
 
   const getStatusBadgeClass = (status) => {
     switch(status) {
@@ -177,34 +179,71 @@ export default function DataWilayah() {
         </div>
       </div>
 
-      {/* Statistics */}
-      <div className="stats-grid">
-        {statistics.map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <div key={index} className="stat-card">
-              <div className="stat-icon" style={{ color: stat.color }}>
-                <IconComponent size={28} />
-              </div>
-              <h3 className="stat-title">{stat.title}</h3>
-              <p className="stat-value">{stat.value}</p>
-            </div>
-          );
-        })}
+      {/* Info Cards Square */}
+      <div className="info-cards-container">
+        <div className="info-card-square bg-gradient-desa">
+          <div className="card-icon-wrapper">
+            <Home size={32} />
+          </div>
+          <div className="card-value-large">{totalDesa}</div>
+          <div className="card-label-text">Total Desa</div>
+        </div>
+        
+        <div className="info-card-square bg-gradient-luas">
+          <div className="card-icon-wrapper">
+            <Map size={32} />
+          </div>
+          <div className="card-value-large">{totalLuas.toLocaleString('id-ID', { maximumFractionDigits: 2 })} km²</div>
+          <div className="card-label-text">Luas Wilayah</div>
+        </div>
+
+        <div className="info-card-square bg-gradient-penduduk">
+          <div className="card-icon-wrapper">
+            <Users size={32} />
+          </div>
+          <div className="card-value-large">{totalPenduduk.toLocaleString('id-ID')}</div>
+          <div className="card-label-text">Penduduk</div>
+        </div>
       </div>
 
       {/* Controls */}
       <div className="wilayah-controls">
         <div className="search-box">
           <Search size={20} />
-          <input type="text" placeholder="Cari nama desa..." />
+          <input 
+            type="text" 
+            placeholder="Cari nama desa..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
         <div className="control-buttons">
-          <button className="btn-icon">
-            <Filter size={20} />
-            Filter
-          </button>
-          <button className="btn-icon">
+          <div style={{ position: 'relative' }}>
+            <button className="btn-icon" onClick={() => setShowFilterMenu(!showFilterMenu)}>
+              <Filter size={20} />
+              Filter
+            </button>
+            {showFilterMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '110%',
+                right: 0,
+                background: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                zIndex: 50,
+                minWidth: '180px',
+                overflow: 'hidden',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ padding: '8px 12px', fontSize: '0.85rem', color: '#6b7280', borderBottom: '1px solid #f3f4f6' }}>Filter Kecamatan</div>
+                <button onClick={() => { navigate('/wilayah'); setShowFilterMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: !filter ? '#f0fdf4' : 'white', border: 'none', cursor: 'pointer', color: !filter ? '#059669' : '#374151' }}>Semua Wilayah</button>
+                <button onClick={() => { navigate('/wilayah?filter=way-jepara'); setShowFilterMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: filter === 'way-jepara' ? '#f0fdf4' : 'white', border: 'none', cursor: 'pointer', color: filter === 'way-jepara' ? '#059669' : '#374151' }}>Kec. Way Jepara</button>
+                <button onClick={() => { navigate('/wilayah?filter=braja-selebah'); setShowFilterMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: filter === 'braja-selebah' ? '#f0fdf4' : 'white', border: 'none', cursor: 'pointer', color: filter === 'braja-selebah' ? '#059669' : '#374151' }}>Kec. Braja Selebah</button>
+              </div>
+            )}
+          </div>
+          <button className="btn-icon" onClick={handleExport}>
             <Download size={20} />
             Export
           </button>
@@ -221,7 +260,7 @@ export default function DataWilayah() {
               <th>Kecamatan</th>
               <th>Luas Wilayah</th>
               <th>Jumlah Penduduk</th>
-              <th>Kepala Desa</th>
+              <th>Babinsa</th>
               <th>Status Keamanan</th>
               <th>Aksi</th>
             </tr>
@@ -239,7 +278,7 @@ export default function DataWilayah() {
                   <span className={`badge ${getStatusBadgeClass(item.status)}`}>{item.status}</span>
                 </td>
                 <td style={{display: 'flex', gap: '0.5rem'}}>
-                  <button className="btn-action" onClick={() => alert(`Detail ${item.desa}`)}>Detail</button>
+                  <button className="btn-action" onClick={() => handleDetailClick(item)}>Detail</button>
                   {canEdit && (
                     <button className="btn-action btn-edit" onClick={() => handleEditClick(item)}>
                       <Edit size={14} /> Edit
@@ -294,7 +333,7 @@ export default function DataWilayah() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Kepala Desa</label>
+                <label className="form-label">Babinsa</label>
                 <input type="text" name="kades" className="form-input" value={currentEditData.kades} onChange={handleInputChange} />
               </div>
 
@@ -312,6 +351,75 @@ export default function DataWilayah() {
                 <button type="submit" className="btn-save"><Save size={18} /> Simpan Perubahan</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail */}
+      {isDetailModalOpen && currentDetailData && (
+        <div className="modal-overlay" onClick={() => setIsDetailModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Detail Wilayah</h3>
+              <button className="close-btn" onClick={() => setIsDetailModalOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="detail-body">
+              <div className="form-group">
+                <label className="form-label">Peta Lokasi</label>
+                <div style={{ 
+                    height: '250px', 
+                    width: '100%', 
+                    borderRadius: '8px', 
+                    overflow: 'hidden', 
+                    border: '1px solid #e5e7eb',
+                    background: '#e9ecef'
+                }}>
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(currentDetailData.desa + ', ' + currentDetailData.kecamatan + ', Lampung Timur')}&t=&z=13&ie=UTF8&iwloc=&output=embed`}>
+                    </iframe>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Nama Desa</label>
+                <div className="form-input" style={{backgroundColor: '#f3f4f6'}}>{currentDetailData.desa}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Kecamatan</label>
+                <div className="form-input" style={{backgroundColor: '#f3f4f6'}}>{currentDetailData.kecamatan}</div>
+              </div>
+              <div className="form-group" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
+                <div>
+                  <label className="form-label">Luas Wilayah</label>
+                  <div className="form-input" style={{backgroundColor: '#f3f4f6'}}>{currentDetailData.luas}</div>
+                </div>
+                <div>
+                  <label className="form-label">Jumlah Penduduk</label>
+                  <div className="form-input" style={{backgroundColor: '#f3f4f6'}}>{currentDetailData.penduduk} Jiwa</div>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Babinsa</label>
+                <div className="form-input" style={{backgroundColor: '#f3f4f6'}}>{currentDetailData.kades}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Status Keamanan</label>
+                <div className="form-input" style={{backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center'}}>
+                   <span className={`badge ${getStatusBadgeClass(currentDetailData.status)}`}>{currentDetailData.status}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-cancel" onClick={() => setIsDetailModalOpen(false)}>Tutup</button>
+            </div>
           </div>
         </div>
       )}

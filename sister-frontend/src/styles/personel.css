@@ -36,53 +36,24 @@
   flex-wrap: wrap;
 }
 
-.search-box svg {
-  color: #9ca3af;
-}
-
-.search-box input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 0.95rem;
-  color: #1f2937;
-  background: transparent;
-}
-
-.search-box input::placeholder {
-  color: #d1d5db;
-}
-
 .control-buttons {
   display: flex;
   gap: 1rem;
 }
 
-.btn-icon {
+.btn-create {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #065f46;
-  transition: all 0.3s ease;
-}
-
-.btn-icon:hover {
-  background: #f0fdf4;
-  border-color: #059669;
-  color: #059669;
-  box-shadow: 0 4px 8px rgba(5, 150, 105, 0.1);
-}
-
-.btn-icon svg {
-  width: 18px;
-  height: 18px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2);
 }
 
 /* Organogram Styling */
@@ -119,14 +90,6 @@
   align-items: center;
   gap: 2rem;
   position: relative;
-}
-
-.leadership-cards {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 4rem;
-  flex-wrap: wrap;
 }
 
 /* Babinsa Section */
@@ -171,7 +134,7 @@
 }
 
 .card-header-accent {
-  height: 100px;
+  height: 130px;
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   background-image: linear-gradient(135deg, #059669 0%, #047857 100%), url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
   position: relative;
@@ -198,19 +161,21 @@
 
 .avatar-container {
   position: relative;
-  margin: -60px auto 1rem auto;
-  width: 110px;
-  height: 110px;
-  border-radius: 20px;
-  padding: 4px;
+  margin: -120px auto 1.5rem auto;
+  width: 180px;
+  height: 240px;
+  aspect-ratio: 3 / 4; /* Rasio 3:4 Presisi */
+  border-radius: 12px;
+  padding: 6px; /* Bingkai putih lebih tebal */
   background: white;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0; /* Garis tepi bingkai */
 }
 
 .avatar-img {
   width: 100%;
   height: 100%;
-  border-radius: 16px;
+  border-radius: 8px;
   object-fit: cover;
 }
 
@@ -260,6 +225,37 @@
   margin: 0;
 }
 
+/* Card Actions */
+.card-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+
+.btn-icon-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+
+.btn-icon-action.edit { color: #f59e0b; }
+.btn-icon-action.edit:hover { background: #f59e0b; color: white; }
+
+.btn-icon-action.delete { color: #ef4444; }
+.btn-icon-action.delete:hover { background: #ef4444; color: white; }
+
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .personel-container {
@@ -272,10 +268,6 @@
 
   .personel-controls {
     gap: 1rem;
-  }
-
-  .btn-icon {
-    padding: 0.65rem 1rem;
   }
 }
 
@@ -298,17 +290,8 @@
     align-items: stretch;
   }
 
-  .search-box {
-    min-width: 100%;
-  }
-
   .control-buttons {
     width: 100%;
-  }
-
-  .btn-icon {
-    flex: 1;
-    justify-content: center;
   }
 }
 
@@ -328,4 +311,115 @@
   .babinsa-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Modal Styles (Copied/Adapted for consistency) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-cancel {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-save {
+  padding: 0.75rem 1.5rem;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
