@@ -1,116 +1,96 @@
-import { User, Mail, Phone, MapPin, Shield, Edit, Activity, FileText } from 'lucide-react';
+import { Mail, Phone, MapPin, Shield, Hash, Award, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import '../styles/profile.css';
 
 export default function Profile() {
-  // Dummy User Data
-  const user = {
-    name: 'Muhammad Irfan',
-    nrp: '19654321',
-    rank: 'Sersan Satu',
-    position: 'Babinsa Desa Braja Sakti',
+  // State untuk data user
+  const [user, setUser] = useState({
+    name: 'Tamu',
+    nrp: '-',
+    rank: '-',
+    position: 'Pengunjung',
     unit: 'Koramil 429-09 Way Jepara',
-    email: 'irfan@koramil.mil.id',
-    phone: '0812-3456-7890',
-    address: 'Asrama Koramil Way Jepara',
-    joinDate: '12 Januari 2015',
-    avatar: 'https://i.pravatar.cc/300?u=irfan'
-  };
+    email: '-',
+    phone: '-',
+    address: '-',
+    avatar: 'https://i.pravatar.cc/300?u=guest'
+  });
 
-  const activities = [
-    { id: 1, title: 'Laporan Komsos', desc: 'Mengirim laporan kegiatan Komsos dengan warga Desa Braja Sakti', time: '2 jam yang lalu', icon: FileText },
-    { id: 2, title: 'Update Data Wilayah', desc: 'Memperbarui data demografi Desa Braja Sakti', time: '1 hari yang lalu', icon: MapPin },
-    { id: 3, title: 'Login Sistem', desc: 'Masuk ke sistem SISTER melalui perangkat mobile', time: '1 hari yang lalu', icon: Shield },
-  ];
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser({
+        name: parsedUser.nama || 'User',
+        nrp: parsedUser.nrp || '-',
+        rank: parsedUser.role === 'danramil' ? 'Kapten' : 'Sersan', // Logika sederhana mapping role ke pangkat
+        position: parsedUser.jabatan || 'Anggota',
+        unit: 'Koramil 429-09 Way Jepara',
+        email: `${parsedUser.username}@koramil.mil.id`,
+        phone: '0812-3456-7890', // Data dummy statis
+        address: 'Asrama Koramil Way Jepara', // Data dummy statis
+        avatar: `https://i.pravatar.cc/300?u=${parsedUser.username}`
+      });
+    }
+  }, []);
 
   return (
     <div className="profile-container">
-      {/* Header Cover */}
-      <div className="profile-header">
-        <div className="profile-cover">
-          <div className="profile-actions">
-            <button className="btn-edit-profile">
-              <Edit size={16} /> Edit Cover
-            </button>
+      <div className="profile-card-modern">
+        {/* Decorative Header Accent */}
+        <div className="card-header-accent"></div>
+        
+        <div className="profile-main-info">
+          <div className="avatar-container">
+            <img src={user.avatar} alt={user.name} className="avatar-img" />
+            <div className="rank-badge-icon">
+              <Award size={20} />
+            </div>
           </div>
-        </div>
-        <div className="profile-avatar-wrapper">
-          <img src={user.avatar} alt={user.name} className="profile-avatar" />
-        </div>
-      </div>
-
-      <div className="profile-content">
-        {/* Sidebar Info */}
-        <div className="profile-sidebar">
-          <div className="profile-card">
-            <div className="user-identity">
-              <h2 className="user-name">{user.name}</h2>
-              <p className="user-role">{user.rank}</p>
-              <span className="user-nrp">NRP. {user.nrp}</span>
-            </div>
-            
-            <div className="info-list">
-              <div className="info-item">
-                <Shield size={18} className="info-icon" />
-                <span>{user.position}</span>
-              </div>
-              <div className="info-item">
-                <MapPin size={18} className="info-icon" />
-                <span>{user.unit}</span>
-              </div>
-              <div className="info-item">
-                <Mail size={18} className="info-icon" />
-                <span>{user.email}</span>
-              </div>
-              <div className="info-item">
-                <Phone size={18} className="info-icon" />
-                <span>{user.phone}</span>
-              </div>
-            </div>
+          
+          <h1 className="profile-name">{user.name}</h1>
+          <p className="profile-rank-text">{user.rank}</p>
+          
+          <div className="nrp-pill">
+            <Hash size={14} /> <span>{user.nrp}</span>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="profile-main">
-          {/* Stats */}
-          <div className="stats-overview">
-            <div className="stat-box">
-              <span className="stat-number">142</span>
-              <span className="stat-label">Laporan Dibuat</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-number">28</span>
-              <span className="stat-label">Kegiatan Bulan Ini</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-number">12</span>
-              <span className="stat-label">Wilayah Binaan</span>
-            </div>
-          </div>
+        <div className="profile-divider"></div>
 
-          {/* Recent Activity */}
-          <div className="profile-card">
-            <div className="section-header">
-              <h3 className="section-title">Aktivitas Terakhir</h3>
-              <button style={{background:'none', border:'none', color:'#059669', cursor:'pointer', fontSize:'0.9rem', fontWeight:'600'}}>Lihat Semua</button>
-            </div>
-            <div className="activity-list">
-              {activities.map(activity => {
-                const Icon = activity.icon;
-                return (
-                  <div key={activity.id} className="activity-item">
-                    <div className="activity-icon">
-                      <Icon size={20} />
-                    </div>
-                    <div className="activity-content">
-                      <h4>{activity.title}</h4>
-                      <p>{activity.desc}</p>
-                      <span className="activity-time">{activity.time}</span>
-                    </div>
-                  </div>
-                );
-              })}
+        <div className="profile-bio-grid">
+          <div className="bio-item">
+            <div className="bio-icon"><Shield size={18} /></div>
+            <div className="bio-content">
+              <span className="bio-label">Jabatan</span>
+              <span className="bio-value">{user.position}</span>
             </div>
           </div>
+          <div className="bio-item">
+            <div className="bio-icon"><MapPin size={18} /></div>
+            <div className="bio-content">
+              <span className="bio-label">Kesatuan</span>
+              <span className="bio-value">{user.unit}</span>
+            </div>
+          </div>
+          <div className="bio-item">
+            <div className="bio-icon"><Mail size={18} /></div>
+            <div className="bio-content">
+              <span className="bio-label">Email</span>
+              <span className="bio-value">{user.email}</span>
+            </div>
+          </div>
+          <div className="bio-item">
+            <div className="bio-icon"><Phone size={18} /></div>
+            <div className="bio-content">
+              <span className="bio-label">Telepon</span>
+              <span className="bio-value">{user.phone}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="profile-footer-status">
+          <CheckCircle2 size={16} /> <span>Status Personel: <strong>AKTIF</strong></span>
         </div>
       </div>
     </div>

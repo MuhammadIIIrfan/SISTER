@@ -1,4 +1,4 @@
-import { MapPin, Users, Home, Search, Filter, Download, AlertTriangle, Edit, X, Save } from 'lucide-react';
+import { MapPin, Users, Home, Search, Filter, Download, AlertTriangle, Edit, X, Save, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import '../styles/data-wilayah.css';
@@ -26,6 +26,15 @@ export default function DataWilayah() {
   // State untuk Modal Edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentEditData, setCurrentEditData] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  // Auto-hide notification
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   // Fungsi membuka modal edit
   const handleEditClick = (item) => {
@@ -55,9 +64,13 @@ export default function DataWilayah() {
         const updatedItem = await response.json();
         setData(prevData => prevData.map(item => item.id === updatedItem.id ? updatedItem : item));
         setIsEditModalOpen(false);
+        setNotification({ type: 'success', message: 'Data berhasil diperbarui!' });
+      } else {
+        setNotification({ type: 'error', message: 'Gagal memperbarui data.' });
       }
     } catch (error) {
       console.error("Error saving data:", error);
+      setNotification({ type: 'error', message: 'Gagal terhubung ke server.' });
     }
   };
 
@@ -72,6 +85,20 @@ export default function DataWilayah() {
   const pageTitle = filter === 'way-jepara' ? 'Data Wilayah Kec. Way Jepara' : filter === 'braja-selebah' ? 'Data Wilayah Kec. Braja Selebah' : 'DATA TERITORIAL KORAMIL 429-09';
   const pageSubtitle = filter ? `Daftar desa dan kondisi wilayah di Kecamatan ${filter === 'way-jepara' ? 'Way Jepara' : 'Braja Selebah'}` : 'Data lengkap seluruh wilayah teritorial Koramil 429-09';
 
+  // Hitung statistik dinamis
+  const totalPenduduk = filteredData.reduce((acc, item) => {
+    // Hapus semua karakter non-digit untuk mendapatkan angka murni
+    const cleanStr = item.penduduk?.toString().replace(/[^0-9]/g, '') || '0';
+    const val = parseInt(cleanStr, 10);
+    return acc + val;
+  }, 0);
+
+  const totalLuas = filteredData.reduce((acc, item) => {
+    // Ambil angka, ganti koma dengan titik jika ada, lalu parse float
+    const val = parseFloat(item.luas?.toString().replace(',', '.').replace(/[^0-9.]/g, '') || 0);
+    return acc + (isNaN(val) ? 0 : val);
+  }, 0);
+
   const statistics = [
     {
       title: 'Total Desa',
@@ -81,13 +108,13 @@ export default function DataWilayah() {
     },
     {
       title: 'Total Penduduk',
-      value: '29,450', // Static for demo
+      value: `${totalPenduduk.toLocaleString('id-ID')} Jiwa`,
       icon: Users,
       color: '#3b82f6'
     },
     {
       title: 'Luas Wilayah',
-      value: '101 km²',
+      value: `${totalLuas.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} km²`,
       icon: MapPin,
       color: '#f59e0b'
     },
@@ -110,6 +137,37 @@ export default function DataWilayah() {
 
   return (
     <div className="data-wilayah-container">
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Notification Popup */}
+      {notification && (
+        <div style={{
+          position: 'fixed',
+          top: '90px', /* Disesuaikan agar di bawah navbar */
+          right: '20px',
+          padding: '1rem 1.5rem',
+          borderRadius: '12px',
+          backgroundColor: notification.type === 'success' ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
+          color: 'white',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          border: '1px solid rgba(255,255,255,0.2)',
+          animation: 'slideIn 0.3s ease-out',
+          fontWeight: '500'
+        }}>
+          {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
+          <span>{notification.message}</span>
+        </div>
+      )}
       {/* Header */}
       <div className="data-wilayah-header">
         <div>

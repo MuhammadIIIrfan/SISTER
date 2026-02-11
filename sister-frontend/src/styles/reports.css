@@ -134,6 +134,72 @@
   box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.15);
 }
 
+/* --- Detail Modal Styles --- */
+.detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detail-image-wrapper {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 400px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-image-wrapper img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  max-height: 400px;
+}
+
+.detail-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.detail-meta {
+  display: flex;
+  gap: 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.detail-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-title-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.detail-desc-text {
+  color: #334155;
+  line-height: 1.8;
+  font-size: 1rem;
+  white-space: pre-wrap; /* Menjaga format paragraf */
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
 .report-image-container {
   height: 180px;
   background: #f1f5f9;

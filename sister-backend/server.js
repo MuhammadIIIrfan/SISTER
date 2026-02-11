@@ -1,130 +1,252 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 const app = express();
 const port = 5000;
 const SECRET_KEY = 'sister-secret-key-rahasia'; // Kunci rahasia untuk token
 
 // Middleware
 app.use(cors()); // Mengizinkan akses dari frontend (beda port)
-app.use(express.json()); // Parsing body request JSON
+app.use(express.json({ limit: '100mb' })); // Parsing body request JSON (limit diperbesar untuk foto resolusi tinggi)
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
-// --- DATA DUMMY USER (Untuk Login) ---
-const users = [
-    {
-        id: 1,
-        username: 'danramil',
-        password: '123',
-        role: 'danramil',
-        nama: 'Kapten Ahmad Wijaya',
-        nrp: '17654321',
-        jabatan: 'Danramil'
-    },
-    {
-        id: 2,
-        username: 'babinsa',
-        password: '123',
-        role: 'babinsa',
-        nama: 'Sersan Rudi Hermawan',
-        nrp: '19654323',
-        jabatan: 'Babinsa'
+// --- DATABASE SETUP (SQLite) ---
+const dbPath = path.resolve(__dirname, 'sister.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error opening database', err.message);
+    } else {
+        console.log('Connected to the SQLite database.');
+        initDb();
     }
-];
+});
 
-// Data Wilayah (Simulasi Database In-Memory)
-let dataWilayah = [
-    { id: 1, desa: 'Braja Sakti', kecamatan: 'Way Jepara', luas: '12.5 km²', penduduk: '4,500', kades: 'Budi Santoso', status: 'Aman' },
-    { id: 2, desa: 'Labuhan Ratu', kecamatan: 'Way Jepara', luas: '15.2 km²', penduduk: '5,200', kades: 'Hendra Wijaya', status: 'Aman' },
-    { id: 3, desa: 'Braja Asri', kecamatan: 'Way Jepara', luas: '10.8 km²', penduduk: '3,800', kades: 'Slamet Riyadi', status: 'Waspada' },
-    { id: 4, desa: 'Sumber Marga', kecamatan: 'Way Jepara', luas: '11.5 km²', penduduk: '4,150', kades: 'Joko Susilo', status: 'Aman' },
-    { id: 5, desa: 'Braja Yekti', kecamatan: 'Braja Selebah', luas: '14.1 km²', penduduk: '4,100', kades: 'Wawan Setiawan', status: 'Aman' },
-    { id: 6, desa: 'Braja Harjosari', kecamatan: 'Braja Selebah', luas: '11.3 km²', penduduk: '3,900', kades: 'Agus Pratama', status: 'Aman' },
-    { id: 7, desa: 'Braja Gemilang', kecamatan: 'Braja Selebah', luas: '13.7 km²', penduduk: '4,300', kades: 'Rudi Hartono', status: 'Aman' },
-    { id: 8, desa: 'Braja Indah', kecamatan: 'Braja Selebah', luas: '12.0 km²', penduduk: '3,500', kades: 'Dedi Mulyadi', status: 'Rawan' },
-];
+// Helper functions untuk Async/Await Database
+function dbRun(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+            if (err) reject(err);
+            else resolve(this);
+        });
+    });
+}
+
+function dbGet(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
+}
+
+function dbAll(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
+}
+
+// Inisialisasi Tabel dan Data Awal
+async function initDb() {
+    // 1. Tabel Users
+    await dbRun(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT,
+        role TEXT,
+        nama TEXT,
+        nrp TEXT,
+        jabatan TEXT
+    )`);
+
+    const userCount = await dbGet("SELECT count(*) as count FROM users");
+    if (userCount.count === 0) {
+        console.log("Seeding users...");
+        await dbRun("INSERT INTO users (username, password, role, nama, nrp, jabatan) VALUES (?, ?, ?, ?, ?, ?)", ['danramil', '123', 'danramil', 'Kapten Ahmad Wijaya', '17654321', 'Danramil']);
+        await dbRun("INSERT INTO users (username, password, role, nama, nrp, jabatan) VALUES (?, ?, ?, ?, ?, ?)", ['babinsa', '123', 'babinsa', 'Sersan Rudi Hermawan', '19654323', 'Babinsa']);
+    }
+
+    // 2. Tabel Wilayah
+    await dbRun(`CREATE TABLE IF NOT EXISTS wilayah (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        desa TEXT,
+        kecamatan TEXT,
+        luas TEXT,
+        penduduk TEXT,
+        kades TEXT,
+        status TEXT
+    )`);
+
+    const wilayahCount = await dbGet("SELECT count(*) as count FROM wilayah");
+    if (wilayahCount.count === 0) {
+        console.log("Seeding wilayah...");
+        const initialWilayah = [
+            ['Braja Sakti', 'Way Jepara', '12.5 km²', '4,500', 'Budi Santoso', 'Aman'],
+            ['Labuhan Ratu', 'Way Jepara', '15.2 km²', '5,200', 'Hendra Wijaya', 'Aman'],
+            ['Braja Asri', 'Way Jepara', '10.8 km²', '3,800', 'Slamet Riyadi', 'Waspada'],
+            ['Sumber Marga', 'Way Jepara', '11.5 km²', '4,150', 'Joko Susilo', 'Aman'],
+            ['Braja Yekti', 'Braja Selebah', '14.1 km²', '4,100', 'Wawan Setiawan', 'Aman'],
+            ['Braja Harjosari', 'Braja Selebah', '11.3 km²', '3,900', 'Agus Pratama', 'Aman'],
+            ['Braja Gemilang', 'Braja Selebah', '13.7 km²', '4,300', 'Rudi Hartono', 'Aman'],
+            ['Braja Indah', 'Braja Selebah', '12.0 km²', '3,500', 'Dedi Mulyadi', 'Rawan']
+        ];
+        for (const w of initialWilayah) {
+            await dbRun("INSERT INTO wilayah (desa, kecamatan, luas, penduduk, kades, status) VALUES (?, ?, ?, ?, ?, ?)", w);
+        }
+    }
+
+    // 3. Tabel Reports
+    await dbRun(`CREATE TABLE IF NOT EXISTS reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        category TEXT,
+        date TEXT,
+        time TEXT,
+        location TEXT,
+        description TEXT,
+        image TEXT
+    )`);
+}
 
 // --- ENDPOINTS ---
 
 // 1. Login Endpoint
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // Cari user yang cocok
-    const user = users.find(u => u.username === username && u.password === password);
-
-    if (user) {
-        // Generate Token
-        const token = jwt.sign({ id: user.id, role: user.role, nama: user.nama }, SECRET_KEY, { expiresIn: '12h' });
-
-        res.json({
-            success: true,
-            message: 'Login berhasil',
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                role: user.role,
-                nama: user.nama,
-                nrp: user.nrp,
-                jabatan: user.jabatan
-            }
-        });
-    } else {
-        res.status(401).json({ success: false, message: 'Username atau Password salah!' });
+    try {
+        const user = await dbGet("SELECT * FROM users WHERE username = ? AND password = ?", [username, password]);
+        
+        if (user) {
+            const token = jwt.sign({ id: user.id, role: user.role, nama: user.nama }, SECRET_KEY, { expiresIn: '12h' });
+            res.json({
+                success: true,
+                message: 'Login berhasil',
+                token,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    role: user.role,
+                    nama: user.nama,
+                    nrp: user.nrp,
+                    jabatan: user.jabatan
+                }
+            });
+        } else {
+            res.status(401).json({ success: false, message: 'Username atau Password salah!' });
+        }
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 
 // Endpoint: Ambil semua data
-app.get('/api/wilayah', (req, res) => {
-    res.json(dataWilayah);
+app.get('/api/wilayah', async (req, res) => {
+    try {
+        const rows = await dbAll("SELECT * FROM wilayah");
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 // Endpoint: Ambil satu data berdasarkan ID
-app.get('/api/wilayah/:id', (req, res) => {
+app.get('/api/wilayah/:id', async (req, res) => {
     const id = parseInt(req.params.id);
-    const item = dataWilayah.find(d => d.id === id);
-    if (item) {
-        res.json(item);
-    } else {
-        res.status(404).json({ message: "Data tidak ditemukan" });
+    try {
+        const item = await dbGet("SELECT * FROM wilayah WHERE id = ?", [id]);
+        if (item) res.json(item);
+        else res.status(404).json({ message: "Data tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 
 // Endpoint: Update data berdasarkan ID
-app.put('/api/wilayah/:id', (req, res) => {
+app.put('/api/wilayah/:id', async (req, res) => {
     const id = parseInt(req.params.id);
-    const updatedItem = req.body;
-
-    const index = dataWilayah.findIndex(item => item.id === id);
-    
-    if (index !== -1) {
-        // Update data di memori
-        dataWilayah[index] = { ...dataWilayah[index], ...updatedItem };
-        res.json(dataWilayah[index]);
-    } else {
-        res.status(404).json({ message: "Data tidak ditemukan" });
+    const { desa, kecamatan, luas, penduduk, kades, status } = req.body;
+    try {
+        await dbRun(
+            "UPDATE wilayah SET desa=?, kecamatan=?, luas=?, penduduk=?, kades=?, status=? WHERE id=?",
+            [desa, kecamatan, luas, penduduk, kades, status, id]
+        );
+        const updated = await dbGet("SELECT * FROM wilayah WHERE id = ?", [id]);
+        if (updated) res.json(updated);
+        else res.status(404).json({ message: "Data tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 
 // Endpoint: Tambah data baru (Opsional)
-app.post('/api/wilayah', (req, res) => {
-    const newItem = req.body;
-    // Generate ID sederhana
-    newItem.id = dataWilayah.length ? dataWilayah[dataWilayah.length - 1].id + 1 : 1;
-    dataWilayah.push(newItem);
-    res.status(201).json(newItem);
+app.post('/api/wilayah', async (req, res) => {
+    const { desa, kecamatan, luas, penduduk, kades, status } = req.body;
+    try {
+        const result = await dbRun(
+            "INSERT INTO wilayah (desa, kecamatan, luas, penduduk, kades, status) VALUES (?, ?, ?, ?, ?, ?)",
+            [desa, kecamatan, luas, penduduk, kades, status]
+        );
+        const newItem = await dbGet("SELECT * FROM wilayah WHERE id = ?", [result.lastID]);
+        res.status(201).json(newItem);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 // Endpoint: Hapus data (Opsional)
-app.delete('/api/wilayah/:id', (req, res) => {
+app.delete('/api/wilayah/:id', async (req, res) => {
     const id = parseInt(req.params.id);
-    const index = dataWilayah.findIndex(item => item.id === id);
-    
-    if (index !== -1) {
-        const deletedItem = dataWilayah.splice(index, 1);
-        res.json(deletedItem);
-    } else {
-        res.status(404).json({ message: "Data tidak ditemukan" });
+    try {
+        const result = await dbRun("DELETE FROM wilayah WHERE id = ?", [id]);
+        if (result.changes > 0) res.json({ message: "Data dihapus", id });
+        else res.status(404).json({ message: "Data tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// --- ENDPOINTS LAPORAN ---
+
+// Ambil semua laporan
+app.get('/api/reports', async (req, res) => {
+    try {
+        const rows = await dbAll("SELECT * FROM reports ORDER BY id DESC");
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Tambah laporan baru
+app.post('/api/reports', async (req, res) => {
+    const { title, category, date, time, location, description, image } = req.body;
+    try {
+        const result = await dbRun(
+            "INSERT INTO reports (title, category, date, time, location, description, image) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [title, category, date, time, location, description, image]
+        );
+        const newReport = await dbGet("SELECT * FROM reports WHERE id = ?", [result.lastID]);
+        res.status(201).json(newReport);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Hapus laporan
+app.delete('/api/reports/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+        const result = await dbRun("DELETE FROM reports WHERE id = ?", [id]);
+        if (result.changes > 0) res.json({ message: "Laporan dihapus", id });
+        else res.status(404).json({ message: "Laporan tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 

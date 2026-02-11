@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, ArrowRight, Shield } from 'lucide-react';
+import { User, Lock, ArrowRight, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import '../styles/login.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 import backgroundAsset from '../assets/koramil09.jpg';
@@ -12,6 +12,15 @@ export default function Login() {
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // Auto-hide notification setelah 3 detik
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const handleChange = (e) => {
     setFormData({
@@ -23,6 +32,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setNotification(null);
     
     try {
       const response = await fetch('http://localhost:5000/api/login', {
@@ -36,16 +46,19 @@ export default function Login() {
       const data = await response.json();
 
       if (data.success) {
+        setNotification({ type: 'success', message: 'Login Berhasil! Mengalihkan...' });
         // Simpan token dan info user (role, nama, dll)
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/'); // Redirect ke dashboard
+        setTimeout(() => {
+          navigate('/'); // Redirect ke dashboard dengan delay agar notif terbaca
+        }, 1500);
       } else {
-        alert(data.message || 'Login gagal');
+        setNotification({ type: 'error', message: data.message || 'Login gagal' });
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Gagal terhubung ke server');
+      setNotification({ type: 'error', message: 'Gagal terhubung ke server' });
     } finally {
       setIsLoading(false);
     }
@@ -57,6 +70,38 @@ export default function Login() {
         className="login-bg" 
         style={{ backgroundImage: `url(${backgroundAsset})` }}
       ></div>
+
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Notification Popup */}
+      {notification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          padding: '1rem 1.5rem',
+          borderRadius: '12px',
+          backgroundColor: notification.type === 'success' ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
+          color: 'white',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          border: '1px solid rgba(255,255,255,0.2)',
+          animation: 'slideIn 0.3s ease-out',
+          fontWeight: '500'
+        }}>
+          {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
+          <span>{notification.message}</span>
+        </div>
+      )}
       
       <div className="login-card">
         <div className="login-header">

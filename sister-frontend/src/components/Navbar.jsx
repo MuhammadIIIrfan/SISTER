@@ -25,6 +25,7 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [user, setUser] = useState(null);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,11 +37,15 @@ export default function Navbar() {
   useOutsideAlerter(userMenuRef, () => setShowUserMenu(false));
   useOutsideAlerter(notificationsRef, () => setShowNotifications(false));
 
-  // Tutup semua menu saat URL berubah
+  // Tutup semua menu saat URL berubah dan cek status login
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setShowUserMenu(false);
     setShowNotifications(false);
+    
+    // Cek user dari localStorage
+    const storedUser = localStorage.getItem('user');
+    setUser(storedUser ? JSON.parse(storedUser) : null);
   }, [location]);
 
   // Deteksi scroll untuk mengubah style navbar
@@ -63,6 +68,14 @@ export default function Navbar() {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleUserMenu = () => setShowUserMenu(!showUserMenu);
   const toggleNotifications = () => setShowNotifications(!showNotifications);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setShowUserMenu(false);
+    navigate('/');
+  };
 
   const notifications = [
     { id: 1, title: 'Patroli Rutin', message: 'Patroli wilayah operasi selesai dilaksanakan', time: '2 jam lalu', read: false },
@@ -113,22 +126,30 @@ export default function Navbar() {
           </div>
 
           <div className="user-profile-wrapper" ref={userMenuRef}>
-            <button className="action-button" onClick={toggleUserMenu}>
-              <span style={{ fontWeight: 700 }}>IFN</span>
-            </button>
-            {showUserMenu && (
-              <div className="user-dropdown">
-                <div className="user-info">
-                  <div className="user-name">Muhammad Irfan</div>
-                  <div className="user-email">irfan@koramil.mil.id</div>
-                </div>
-                <NavLink to="/profile" className="dropdown-item">
-                  <User size={16} /> Profile
-                </NavLink>
-                <button onClick={() => navigate('/login')} className="dropdown-item logout-btn">
-                  <LogOut size={16} /> Logout
+            {user ? (
+              <>
+                <button className="action-button" onClick={toggleUserMenu}>
+                  <span style={{ fontWeight: 700 }}>{user.username ? user.username.substring(0, 3).toUpperCase() : 'USR'}</span>
                 </button>
-              </div>
+                {showUserMenu && (
+                  <div className="user-dropdown">
+                    <div className="user-info">
+                      <div className="user-name">{user.nama || 'User'}</div>
+                      <div className="user-email">{user.jabatan || 'Anggota'}</div>
+                    </div>
+                    <NavLink to="/profile" className="dropdown-item">
+                      <User size={16} /> Profile
+                    </NavLink>
+                    <button onClick={handleLogout} className="dropdown-item logout-btn">
+                      <LogOut size={16} /> Logout
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button className="action-button" onClick={() => navigate('/login')}>
+                <User size={20} /> <span style={{ marginLeft: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>LOGIN</span>
+              </button>
             )}
           </div>
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FileText, Camera, MapPin, Clock, Plus, X, Save, Search, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileText, Camera, MapPin, Clock, Plus, X, Save, Search, Image as ImageIcon, Trash2 } from 'lucide-react';
 import '../styles/reports.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 
@@ -7,42 +7,23 @@ export default function Reports() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');
   
-  // Dummy Data History Laporan
-  const [reports, setReports] = useState([
-    {
-      id: 1,
-      title: 'Komsos dengan Tokoh Masyarakat',
-      category: 'Komsos',
-      date: '26 Feb 2024',
-      time: '09:00',
-      location: 'Desa Braja Sakti',
-      description: 'Melaksanakan komunikasi sosial dengan Bapak Haji Suparman membahas keamanan lingkungan menjelang panen raya.',
-      image: 'https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?auto=format&fit=crop&q=80&w=1000',
-      status: 'Terverifikasi'
-    },
-    {
-      id: 2,
-      title: 'Pendampingan Panen Padi',
-      category: 'Pertanian',
-      date: '25 Feb 2024',
-      time: '08:30',
-      location: 'Desa Labuhan Ratu',
-      description: 'Mendampingi Kelompok Tani Makmur Jaya dalam kegiatan panen padi varietas Ciherang seluas 2 hektar.',
-      image: 'https://images.unsplash.com/photo-1625246333195-58197bd47d26?auto=format&fit=crop&q=80&w=1000',
-      status: 'Menunggu'
-    },
-    {
-      id: 3,
-      title: 'Patroli Wilayah Rawan',
-      category: 'Monitoring',
-      date: '24 Feb 2024',
-      time: '22:00',
-      location: 'Perbatasan Hutan',
-      description: 'Melaksanakan patroli malam di titik rawan perlintasan satwa liar dan pencurian kayu.',
-      image: null,
-      status: 'Terverifikasi'
-    }
-  ]);
+  // State Data Laporan
+  const [reports, setReports] = useState([]);
+
+  // State untuk Modal Detail
+  const [selectedReport, setSelectedReport] = useState(null);
+
+  // Cek User Login dari LocalStorage untuk hak akses
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const canEdit = user && (user.role === 'danramil' || user.role === 'babinsa');
+
+  // Fetch data dari backend saat komponen dimuat
+  useEffect(() => {
+    fetch('http://localhost:5000/api/reports')
+      .then(res => res.json())
+      .then(data => setReports(data))
+      .catch(err => console.error("Gagal mengambil data laporan:", err));
+  }, []);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -60,24 +41,69 @@ export default function Reports() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Create fake URL for preview
-      const imageUrl = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, image: imageUrl }));
+      // Validasi ukuran file (Maksimal 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Ukuran foto terlalu besar! Harap pilih foto di bawah 10MB.");
+        e.target.value = null; // Reset input file
+        return;
+      }
+
+      // Convert to Base64 agar bisa dikirim ke backend JSON
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newReport = {
-      id: reports.length + 1,
-      ...formData,
-      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-      status: 'Menunggu'
+    
+    const payload = {
+        ...formData,
+        date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     };
-    setReports([newReport, ...reports]);
-    setIsModalOpen(false);
-    setFormData({ title: '', category: 'Komsos', location: '', description: '', image: null });
+
+    try {
+        const response = await fetch('http://localhost:5000/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+
+        const newReport = await response.json();
+        setReports([newReport, ...reports]);
+        setIsModalOpen(false);
+        setFormData({ title: '', category: 'Komsos', location: '', description: '', image: null });
+    } catch (error) {
+        console.error("Gagal mengirim laporan:", error);
+        alert(`Gagal mengirim laporan: ${error.message}. Pastikan server berjalan dan foto tidak terlalu besar.`);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus laporan ini?')) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/reports/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setReports(prev => prev.filter(report => report.id !== id));
+        } else {
+          alert('Gagal menghapus laporan');
+        }
+      } catch (error) {
+        console.error('Error deleting report:', error);
+        alert('Gagal terhubung ke server');
+      }
+    }
   };
 
   const filteredReports = filterCategory === 'All' 
@@ -112,9 +138,11 @@ export default function Reports() {
             </button>
           ))}
         </div>
-        <button className="btn-create" onClick={() => setIsModalOpen(true)}>
-          <Plus size={20} /> Buat Laporan
-        </button>
+        {canEdit && (
+          <button className="btn-create" onClick={() => setIsModalOpen(true)}>
+            <Plus size={20} /> Buat Laporan
+          </button>
+        )}
       </div>
 
       {/* Reports Grid */}
@@ -139,11 +167,15 @@ export default function Reports() {
               </div>
               <h3 className="report-title">{report.title}</h3>
               <p className="report-desc">{report.description}</p>
-              <div className="report-footer">
-                <span className={`status-text status-${report.status.toLowerCase()}`}>
-                  {report.status === 'Terverifikasi' ? 'Verified' : 'Pending'}
-                </span>
-                <button className="btn-detail">Detail</button>
+              <div className="report-footer" style={{ justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <button className="btn-detail" onClick={() => setSelectedReport(report)}>Detail</button>
+                  {canEdit && (
+                    <button className="btn-detail" style={{ color: '#ef4444', display: 'flex', alignItems: 'center' }} onClick={() => handleDelete(report.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -207,6 +239,46 @@ export default function Reports() {
                 <button type="submit" className="btn-save"><Save size={18} /> Kirim Laporan</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail Laporan */}
+      {selectedReport && (
+        <div className="modal-overlay" onClick={() => setSelectedReport(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Detail Laporan</h3>
+              <button className="close-btn" onClick={() => setSelectedReport(null)}><X size={24} /></button>
+            </div>
+            
+            <div className="detail-body">
+              {selectedReport.image && (
+                <div className="detail-image-wrapper">
+                  <img src={selectedReport.image} alt={selectedReport.title} />
+                </div>
+              )}
+              
+              <div className="detail-header-info">
+                <span className={`category-badge cat-${selectedReport.category.toLowerCase()}`}>
+                  {selectedReport.category}
+                </span>
+                <div className="detail-meta">
+                  <span><Clock size={14} /> {selectedReport.date}, {selectedReport.time}</span>
+                  <span><MapPin size={14} /> {selectedReport.location}</span>
+                </div>
+              </div>
+
+              <h2 className="detail-title-text">{selectedReport.title}</h2>
+              
+              <div className="detail-desc-text">
+                <p>{selectedReport.description}</p>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-cancel" onClick={() => setSelectedReport(null)}>Tutup</button>
+            </div>
           </div>
         </div>
       )}

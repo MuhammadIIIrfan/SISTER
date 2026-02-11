@@ -1,4 +1,4 @@
-import { Users, Filter } from 'lucide-react';
+import { Users, Filter, Hash } from 'lucide-react';
 import '../styles/personel.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 
@@ -194,12 +194,18 @@ export default function Personel() {
           
           {/* Danramil */}
           {danramil && (
-            <div className="personel-card-organogram">
-              <div className="personel-photo">
-                <img src={danramil.foto} alt={danramil.nama} />
-              </div>
-              <div className="personel-details">
+            <div className="personel-card-modern">
+              <div className="card-header-accent"></div>
+              <div className="personel-main-info">
+                <div className="avatar-container">
+                  <img src={danramil.foto} alt={danramil.nama} className="avatar-img" />
+                </div>
                 <h3 className="personel-name">{danramil.nama}</h3>
+                <p className="personel-rank-text">{danramil.pangkat}</p>
+                <div className="nrp-pill">
+                  <Hash size={12} /> <span>{danramil.nrp}</span>
+                </div>
+                <div className="personel-divider"></div>
                 <p className="personel-jabatan">{danramil.jabatan}</p>
               </div>
             </div>
@@ -207,12 +213,18 @@ export default function Personel() {
 
           {/* Batuud */}
           {batuud && (
-            <div className="personel-card-organogram">
-              <div className="personel-photo">
-                <img src={batuud.foto} alt={batuud.nama} />
-              </div>
-              <div className="personel-details">
+            <div className="personel-card-modern">
+              <div className="card-header-accent"></div>
+              <div className="personel-main-info">
+                <div className="avatar-container">
+                  <img src={batuud.foto} alt={batuud.nama} className="avatar-img" />
+                </div>
                 <h3 className="personel-name">{batuud.nama}</h3>
+                <p className="personel-rank-text">{batuud.pangkat}</p>
+                <div className="nrp-pill">
+                  <Hash size={12} /> <span>{batuud.nrp}</span>
+                </div>
+                <div className="personel-divider"></div>
                 <p className="personel-jabatan">{batuud.jabatan}</p>
               </div>
             </div>
@@ -223,12 +235,18 @@ export default function Personel() {
           <h2 className="organogram-section-title">BABINSA</h2>
           <div className="babinsa-grid">
             {babinsaData.map(person => (
-              <div key={person.id} className="personel-card-organogram babinsa-card">
-                 <div className="personel-photo">
-                  <img src={person.foto} alt={person.nama} />
-                </div>
-                <div className="personel-details">
+              <div key={person.id} className="personel-card-modern">
+                <div className="card-header-accent"></div>
+                <div className="personel-main-info">
+                  <div className="avatar-container">
+                    <img src={person.foto} alt={person.nama} className="avatar-img" />
+                  </div>
                   <h3 className="personel-name">{person.nama}</h3>
+                  <p className="personel-rank-text">{person.pangkat}</p>
+                  <div className="nrp-pill">
+                    <Hash size={12} /> <span>{person.nrp}</span>
+                  </div>
+                  <div className="personel-divider"></div>
                   <p className="personel-jabatan">Babinsa {person.wilayah}</p>
                 </div>
               </div>
