@@ -137,6 +137,38 @@ async function initDb() {
             await dbRun("INSERT INTO personel (nama, nrp, jabatan, pangkat, wilayah, status, kontak, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", p);
         }
     }
+
+    // 5. Tabel Incidents (Pertahanan Wilayah)
+    await dbRun(`CREATE TABLE IF NOT EXISTS incidents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        location TEXT,
+        date TEXT,
+        type TEXT,
+        severity TEXT,
+        status TEXT,
+        description TEXT,
+        reporter TEXT
+    )`);
+
+    // MIGRATION: Pastikan kolom reporter ada (fix untuk database lama yang belum punya kolom ini)
+    try {
+        await dbRun("ALTER TABLE incidents ADD COLUMN reporter TEXT");
+    } catch (e) {
+        // Abaikan error jika kolom sudah ada
+    }
+
+    const incidentCount = await dbGet("SELECT count(*) as count FROM incidents");
+    if (incidentCount.count === 0) {
+        console.log("Seeding incidents...");
+        const initialIncidents = [
+            ['Indikasi Paham Radikal', 'Desa Braja Sakti', '2024-02-26', 'Ideologi', 'Siaga', 'Proses', 'Ditemukan penyebaran buku/selebaran yang mengarah pada paham radikal.', 'Warga'],
+            ['Konflik Batas Tanah', 'Desa Labuhan Ratu', '2024-02-24', 'Sosial', 'Waspada', 'Selesai', 'Mediasi sengketa batas tanah antar tetangga berhasil didamaikan.', 'Babinsa'],
+        ];
+        for (const inc of initialIncidents) {
+            await dbRun("INSERT INTO incidents (title, location, date, type, severity, status, description, reporter) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", inc);
+        }
+    }
 }
 
 // --- ENDPOINTS ---
@@ -280,6 +312,47 @@ app.delete('/api/reports/:id', async (req, res) => {
         const result = await dbRun("DELETE FROM reports WHERE id = ?", [id]);
         if (result.changes > 0) res.json({ message: "Laporan dihapus", id });
         else res.status(404).json({ message: "Laporan tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// --- ENDPOINTS INCIDENTS (PERTAHANAN WILAYAH) ---
+
+app.get('/api/incidents', async (req, res) => {
+    try {
+        const rows = await dbAll("SELECT * FROM incidents ORDER BY id DESC");
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.post('/api/incidents', async (req, res) => {
+    const { title, location, type, description, reporter } = req.body;
+    const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const severity = 'Waspada'; // Default severity
+    const status = 'Baru'; // Default status
+    
+    try {
+        const result = await dbRun(
+            "INSERT INTO incidents (title, location, date, type, severity, status, description, reporter) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [title, location, date, type, severity, status, description, reporter]
+        );
+        const newItem = await dbGet("SELECT * FROM incidents WHERE id = ?", [result.lastID]);
+        res.status(201).json(newItem);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.put('/api/incidents/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { severity, status } = req.body;
+    try {
+        await dbRun("UPDATE incidents SET severity=?, status=? WHERE id=?", [severity, status, id]);
+        const updated = await dbGet("SELECT * FROM incidents WHERE id = ?", [id]);
+        res.json(updated);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

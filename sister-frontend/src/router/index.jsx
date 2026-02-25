@@ -14,7 +14,7 @@ export default function AppRouter() {
       <Route path="/wilayah" element={<DataWilayah />} />
       <Route path="/personel" element={<Personel />} />
       <Route path="/Piket" element={<Piket />} />
-      <Route path="/keamanan" element={<Keamanan />} />
+      <Route path="/pertahanan" element={<Keamanan />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/reports" element={<Reports />} />
     </Routes>

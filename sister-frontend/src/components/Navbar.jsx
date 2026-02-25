@@ -26,6 +26,8 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [user, setUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,9 +67,45 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Fetch notifikasi dari backend
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/notifications');
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data);
+          setUnreadCount(data.filter(n => !n.read).length);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil notifikasi:", error);
+      }
+    };
+
+    fetchNotifications();
+    // Polling setiap 30 detik untuk update realtime
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleUserMenu = () => setShowUserMenu(!showUserMenu);
-  const toggleNotifications = () => setShowNotifications(!showNotifications);
+  
+  const toggleNotifications = async () => {
+    const isOpen = !showNotifications;
+    setShowNotifications(isOpen);
+
+    // Jika membuka notifikasi dan ada yang belum dibaca, tandai sudah dibaca di backend
+    if (isOpen && unreadCount > 0) {
+      try {
+        await fetch('http://localhost:5000/api/notifications/mark-read', { method: 'PUT' });
+        setUnreadCount(0);
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      } catch (error) {
+        console.error("Gagal update status notifikasi:", error);
+      }
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -77,11 +115,7 @@ export default function Navbar() {
     navigate('/');
   };
 
-  const notifications = [
-    { id: 1, title: 'Patroli Rutin', message: 'Patroli wilayah operasi selesai dilaksanakan', time: '2 jam lalu', read: false },
-    { id: 2, title: 'Briefing Koordinasi', message: 'Briefing dengan Muspika telah dijadwalkan', time: '5 jam lalu', read: false },
-    { id: 3, title: 'Laporan Mingguan', message: 'Laporan mingguan siap untuk ditinjau', time: '1 hari lalu', read: true }
-  ];
+  const canViewMap = user && (user.role === 'danramil' || user.role === 'babinsa');
 
   return (
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${!isVisible ? 'navbar-hidden' : ''}`}>
@@ -97,15 +131,18 @@ export default function Navbar() {
           <NavLink to="/wilayah" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Data Wilayah</NavLink>
           <NavLink to="/personel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Personel</NavLink>
           <NavLink to="/piket" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Piket</NavLink>
-          <NavLink to="/keamanan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Keamanan</NavLink>
-          <NavLink to="/peta-spasial" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Peta Spasial</NavLink>
+          <NavLink to="/pertahanan" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Pertahanan Wilayah</NavLink>
+          {canViewMap && (
+            <NavLink to="/peta-spasial" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Peta Spasial</NavLink>
+          )}
           <NavLink to="/reports" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Laporan</NavLink>
         </div>
 
         <div className="navbar-actions">
           <div style={{position: 'relative'}} ref={notificationsRef} className="notification-wrapper">
             <button className="action-button" onClick={toggleNotifications}>
-              <Bell size={20} /> <span className="notification-badge">3</span>
+              <Bell size={20} /> 
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
             </button>
             {showNotifications && (
               <div className="notification-dropdown">
@@ -114,12 +151,19 @@ export default function Navbar() {
                   <button className="dropdown-close" onClick={() => setShowNotifications(false)}><X size={16}/></button>
                 </div>
                 <div className="notification-list">
-                  {notifications.map((notif) => (
-                    <div key={notif.id} className="notification-item">
-                      <span className="notif-title">{notif.title}</span>
-                      <div>{notif.message}</div>
+                  {notifications.length > 0 ? (
+                    notifications.map((notif) => (
+                      <div key={notif.id} className="notification-item" style={{ borderLeft: !notif.read ? '3px solid #ff9d00' : '3px solid transparent' }}>
+                        <span className="notif-title">{notif.title}</span>
+                        <div>{notif.message}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>{notif.time}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                      Tidak ada notifikasi baru
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
@@ -168,8 +212,10 @@ export default function Navbar() {
           <NavLink to="/wilayah" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Data Wilayah</NavLink>
           <NavLink to="/personel" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Personel</NavLink>
           <NavLink to="/piket" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Piket</NavLink>
-          <NavLink to="/keamanan" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Keamanan</NavLink>
-          <NavLink to="/peta-spasial" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Peta Spasial</NavLink>
+          <NavLink to="/pertahanan" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Pertahanan Wilayah</NavLink>
+          {canViewMap && (
+            <NavLink to="/peta-spasial" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Peta Spasial</NavLink>
+          )}
           <NavLink to="/reports" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Laporan</NavLink>
         </div>
       )}

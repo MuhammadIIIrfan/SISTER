@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Camera, MapPin, Clock, Plus, X, Save, Search, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { FileText, Camera, MapPin, Clock, Plus, X, Save, Search, Image as ImageIcon, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
 import '../styles/reports.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 
@@ -13,6 +13,9 @@ export default function Reports() {
   // State untuk Modal Detail
   const [selectedReport, setSelectedReport] = useState(null);
 
+  // State untuk Notifikasi
+  const [notification, setNotification] = useState(null);
+
   // Cek User Login dari LocalStorage untuk hak akses
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const canEdit = user && (user.role === 'danramil' || user.role === 'babinsa');
@@ -24,6 +27,14 @@ export default function Reports() {
       .then(data => setReports(data))
       .catch(err => console.error("Gagal mengambil data laporan:", err));
   }, []);
+
+  // Auto-hide notification setelah 3 detik
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -43,7 +54,7 @@ export default function Reports() {
     if (file) {
       // Validasi ukuran file (Maksimal 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert("Ukuran foto terlalu besar! Harap pilih foto di bawah 10MB.");
+        setNotification({ type: 'error', message: 'Ukuran foto terlalu besar! Maksimal 10MB.' });
         e.target.value = null; // Reset input file
         return;
       }
@@ -81,9 +92,10 @@ export default function Reports() {
         setReports([newReport, ...reports]);
         setIsModalOpen(false);
         setFormData({ title: '', category: 'Komsos', location: '', description: '', image: null });
+        setNotification({ type: 'success', message: 'Laporan berhasil dikirim!' });
     } catch (error) {
         console.error("Gagal mengirim laporan:", error);
-        alert(`Gagal mengirim laporan: ${error.message}. Pastikan server berjalan dan foto tidak terlalu besar.`);
+        setNotification({ type: 'error', message: 'Gagal mengirim laporan. Pastikan server berjalan.' });
     }
   };
 
@@ -96,12 +108,13 @@ export default function Reports() {
 
         if (response.ok) {
           setReports(prev => prev.filter(report => report.id !== id));
+          setNotification({ type: 'success', message: 'Laporan berhasil dihapus.' });
         } else {
-          alert('Gagal menghapus laporan');
+          setNotification({ type: 'error', message: 'Gagal menghapus laporan.' });
         }
       } catch (error) {
         console.error('Error deleting report:', error);
-        alert('Gagal terhubung ke server');
+        setNotification({ type: 'error', message: 'Gagal terhubung ke server.' });
       }
     }
   };
@@ -112,6 +125,37 @@ export default function Reports() {
 
   return (
     <div className="reports-container">
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Notification Popup */}
+      {notification && (
+        <div style={{
+          position: 'fixed',
+          top: '90px', /* Disesuaikan agar di bawah navbar */
+          right: '20px',
+          padding: '1rem 1.5rem',
+          borderRadius: '12px',
+          backgroundColor: notification.type === 'success' ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
+          color: 'white',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          border: '1px solid rgba(255,255,255,0.2)',
+          animation: 'slideIn 0.3s ease-out',
+          fontWeight: '500'
+        }}>
+          {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
+          <span>{notification.message}</span>
+        </div>
+      )}
       {/* Header */}
       <div className="reports-header">
         <div>

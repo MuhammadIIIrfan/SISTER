@@ -189,6 +189,99 @@
 .status-process { color: #d97706; }
 .status-closed { color: #059669; }
 
+/* Button Create Report Large (Public) */
+.report-action-container {
+  margin-bottom: 2rem;
+}
+
+.btn-create-report-large {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-create-report-large:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.5);
+}
+
+.btn-create-report-large::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255,255,255,0.1), transparent);
+  pointer-events: none;
+}
+
+.btn-icon-large {
+  background: rgba(255, 255, 255, 0.2);
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.btn-text-large {
+  text-align: left;
+}
+
+.btn-title {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.btn-subtitle {
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Select Inputs for Editing */
+.badge-select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  color: #1f2937;
+}
+
+.bg-red { background: #fee2e2; color: #dc2626; }
+.bg-orange { background: #ffedd5; color: #c2410c; }
+.bg-green { background: #dcfce7; color: #15803d; }
+
+.status-select {
+  padding: 0.25rem;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .keamanan-container {
@@ -213,4 +306,24 @@
     padding-top: 1rem;
     border-top: 1px solid #f1f5f9;
   }
+
+  .btn-create-report-large {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .btn-text-large {
+    text-align: center;
+  }
+}
+
+/* Animation */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

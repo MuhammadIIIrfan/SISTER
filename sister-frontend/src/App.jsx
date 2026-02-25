@@ -38,7 +38,7 @@ function App() {
           <Route path="/wilayah" element={<DataWilayah />} />
           <Route path="/personel" element={<Personel />} />
           <Route path="/piket" element={<Piket />} />
-          <Route path="/keamanan" element={<Keamanan />} />
+          <Route path="/pertahanan" element={<Keamanan />} />
           <Route path="/peta-spasial" element={<PetaSpasial />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/profile" element={<Profile />} />

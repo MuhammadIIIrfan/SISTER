@@ -1,4 +1,4 @@
-import { Search, Filter, Download, AlertTriangle, Edit, X, Save, CheckCircle, Home, Map, Users } from 'lucide-react';
+import { Search, Filter, Download, AlertTriangle, Edit, X, Save, CheckCircle, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/data-wilayah.css';
@@ -47,6 +47,19 @@ export default function DataWilayah() {
     setIsEditModalOpen(true);
   };
 
+  // Fungsi membuka modal tambah
+  const handleAddClick = () => {
+    setCurrentEditData({
+      desa: '',
+      kecamatan: 'Way Jepara',
+      luas: '',
+      penduduk: '',
+      kades: '', // Babinsa
+      status: 'Aman'
+    });
+    setIsEditModalOpen(true);
+  };
+
   // Fungsi membuka modal detail
   const handleDetailClick = (item) => {
     setCurrentDetailData(item);
@@ -65,19 +78,29 @@ export default function DataWilayah() {
   // Fungsi menyimpan perubahan
   const handleSave = async (e) => {
     e.preventDefault();
+    const isEdit = currentEditData.id;
+    const url = isEdit 
+      ? `http://localhost:5000/api/wilayah/${currentEditData.id}`
+      : 'http://localhost:5000/api/wilayah';
+    const method = isEdit ? 'PUT' : 'POST';
+
     try {
-      const response = await fetch(`http://localhost:5000/api/wilayah/${currentEditData.id}`, {
-        method: 'PUT',
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentEditData)
       });
       if (response.ok) {
-        const updatedItem = await response.json();
-        setData(prevData => prevData.map(item => item.id === updatedItem.id ? updatedItem : item));
+        const savedItem = await response.json();
+        if (isEdit) {
+          setData(prevData => prevData.map(item => item.id === savedItem.id ? savedItem : item));
+        } else {
+          setData(prevData => [...prevData, savedItem]);
+        }
         setIsEditModalOpen(false);
-        setNotification({ type: 'success', message: 'Data berhasil diperbarui!' });
+        setNotification({ type: 'success', message: isEdit ? 'Data berhasil diperbarui!' : 'Data berhasil ditambahkan!' });
       } else {
-        setNotification({ type: 'error', message: 'Gagal memperbarui data.' });
+        setNotification({ type: 'error', message: `Gagal ${isEdit ? 'memperbarui' : 'menambahkan'} data.` });
       }
     } catch (error) {
       console.error("Error saving data:", error);
@@ -94,19 +117,6 @@ export default function DataWilayah() {
       true;
     return matchesSearch && matchesFilter;
   });
-
-  // Hitung Statistik untuk InfoCard
-  const totalDesa = filteredData.length;
-  
-  const totalPenduduk = filteredData.reduce((acc, item) => {
-    const val = parseInt(item.penduduk?.toString().replace(/[^0-9]/g, '') || 0, 10);
-    return acc + val;
-  }, 0);
-
-  const totalLuas = filteredData.reduce((acc, item) => {
-    const val = parseFloat(item.luas?.toString().replace(' km²', '').replace(',', '.') || 0);
-    return acc + (isNaN(val) ? 0 : val);
-  }, 0);
 
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -179,33 +189,6 @@ export default function DataWilayah() {
         </div>
       </div>
 
-      {/* Info Cards Square */}
-      <div className="info-cards-container">
-        <div className="info-card-square bg-gradient-desa">
-          <div className="card-icon-wrapper">
-            <Home size={32} />
-          </div>
-          <div className="card-value-large">{totalDesa}</div>
-          <div className="card-label-text">Total Desa</div>
-        </div>
-        
-        <div className="info-card-square bg-gradient-luas">
-          <div className="card-icon-wrapper">
-            <Map size={32} />
-          </div>
-          <div className="card-value-large">{totalLuas.toLocaleString('id-ID', { maximumFractionDigits: 2 })} km²</div>
-          <div className="card-label-text">Luas Wilayah</div>
-        </div>
-
-        <div className="info-card-square bg-gradient-penduduk">
-          <div className="card-icon-wrapper">
-            <Users size={32} />
-          </div>
-          <div className="card-value-large">{totalPenduduk.toLocaleString('id-ID')}</div>
-          <div className="card-label-text">Penduduk</div>
-        </div>
-      </div>
-
       {/* Controls */}
       <div className="wilayah-controls">
         <div className="search-box">
@@ -218,6 +201,12 @@ export default function DataWilayah() {
           />
         </div>
         <div className="control-buttons">
+          {canEdit && (
+            <button className="btn-icon" onClick={handleAddClick} style={{ color: '#059669', borderColor: '#059669', backgroundColor: '#f0fdf4' }}>
+              <Plus size={20} />
+              Tambah
+            </button>
+          )}
           <div style={{ position: 'relative' }}>
             <button className="btn-icon" onClick={() => setShowFilterMenu(!showFilterMenu)}>
               <Filter size={20} />
@@ -301,7 +290,7 @@ export default function DataWilayah() {
         <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Edit Data Wilayah</h3>
+              <h3 className="modal-title">{currentEditData.id ? 'Edit Data Wilayah' : 'Tambah Data Wilayah'}</h3>
               <button className="close-btn" onClick={() => setIsEditModalOpen(false)}>
                 <X size={24} />
               </button>
