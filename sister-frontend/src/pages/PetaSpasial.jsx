@@ -1,7 +1,53 @@
 import { Map, Layers, Info, MapPin, Users, X, Filter, Shield, AlertTriangle, Navigation, List } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import '../styles/peta-spasial.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
+
+// --- Konfigurasi Ikon Kustom untuk Peta ---
+const createIcon = (iconUrl) => new L.Icon({
+  iconUrl,
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const iconBase = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png');
+const iconDanger = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png');
+const iconWarning = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png');
+const iconSafe = createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png');
+
+// Fallback default icon jika diperlukan
+const defaultIcon = createIcon('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png');
+
+const getMarkerIcon = (type) => {
+  switch (type) {
+    case 'base':
+      return iconBase;
+    case 'danger':
+      return iconDanger;
+    case 'warning':
+      return iconWarning;
+    case 'safe':
+      return iconSafe;
+    default:
+      return defaultIcon;
+  }
+};
+// --- Akhir Konfigurasi Ikon ---
+
+// Komponen untuk mengontrol view peta (animasi flyTo) saat lokasi dipilih
+function MapController({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, zoom, { duration: 1.5 });
+  }, [center, zoom, map]);
+  return null;
+}
 
 export default function PetaSpasial() {
   const [activeFilter, setActiveFilter] = useState('all');
@@ -45,14 +91,21 @@ export default function PetaSpasial() {
 
   // Gabungkan Marker Statis dan Incident
   const staticMarkers = [
-    { id: 'base-1', name: 'Makoramil 429-09', type: 'base', position: [-5.1844, 105.6836], status: 'Operasional', coords: '-5.1844, 105.6836', desc: 'Pusat Komando Rayon Militer Way Jepara.' },
+    { id: 'base-1', name: 'Makoramil 429-09', type: 'base', position: [-5.177049279848184, 105.7047175231431], status: 'Operasional', coords: '-5.1770, 105.7047', desc: 'Pusat Komando Rayon Militer Way Jepara.' },
   ];
 
   const incidentMarkers = incidents
     .filter(i => i.status !== 'Selesai') // Hanya tampilkan kejadian aktif
     .map(inc => {
-      // Fallback ke random offset sekitar Way Jepara jika lokasi tidak dikenal
-      const pos = locationMap[inc.location] || [-5.1844 + (Math.random() - 0.5) * 0.02, 105.6836 + (Math.random() - 0.5) * 0.02];
+      // Prioritaskan koordinat GPS jika ada
+      let pos;
+      if (inc.latitude && inc.longitude) {
+          pos = [inc.latitude, inc.longitude];
+      } else {
+          // Fallback ke random offset sekitar Way Jepara jika lokasi tidak dikenal
+          pos = locationMap[inc.location] || [-5.1844 + (Math.random() - 0.5) * 0.02, 105.6836 + (Math.random() - 0.5) * 0.02];
+      }
+      
       let type = 'safe';
       if (inc.severity === 'Siaga') type = 'danger';
       if (inc.severity === 'Waspada') type = 'warning';
@@ -80,17 +133,21 @@ export default function PetaSpasial() {
 
   const getMarkerColor = (type) => {
     switch(type) {
-      case 'base': return '#059669'; // Hijau (Markas)
+      case 'base': return '#3b82f6'; // Biru (Markas)
       case 'danger': return '#ef4444'; // Merah (Bahaya)
       case 'warning': return '#f59e0b'; // Orange (Waspada)
-      case 'post': return '#3b82f6'; // Biru (Pos)
-      default: return '#10b981'; // Emerald (Aman)
+      case 'safe': return '#10b981'; // Hijau (Aman)
+      default: return '#64748b'; // Abu-abu
     }
   };
 
   const filteredMarkers = activeFilter === 'all' 
     ? mapMarkers 
     : mapMarkers.filter(m => m.type === activeFilter);
+
+  // Tentukan pusat peta dan zoom level berdasarkan lokasi yang dipilih
+  const mapCenter = selectedLocation ? selectedLocation.position : [-5.177049279848184, 105.7047175231431]; // Default: Makoramil
+  const mapZoom = selectedLocation ? 15 : 13;
 
   return (
     <div className="peta-container">
@@ -99,7 +156,7 @@ export default function PetaSpasial() {
         <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
         <h1 className="page-title">PETA SPASIAL (GIS)</h1>
         <p className="page-subtitle">
-          Visualisasi kondisi wilayah Way Jepara secara real-time untuk analisis pertahanan dan keamanan.
+          Visualisasi kondisi wilayah Way Jepara dan Braja Selebah secara real-time untuk analisis pertahanan Wilayah.
         </p>
       </div>
 
@@ -117,15 +174,34 @@ export default function PetaSpasial() {
             </div>
           </div>
 
-          {/* Google Maps Iframe */}
-          <iframe
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            loading="lazy"
-            allowFullScreen
-            src={`https://maps.google.com/maps?q=${selectedLocation ? selectedLocation.position[0] + ',' + selectedLocation.position[1] : 'Kecamatan Way Jepara'}&t=&z=${selectedLocation ? 15 : 13}&ie=UTF8&iwloc=&output=embed`}
-          ></iframe>
+          {/* OpenStreetMap via React-Leaflet */}
+          <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+            <MapController center={mapCenter} zoom={mapZoom} />
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            
+            {/* Render Marker pada Peta */}
+            {filteredMarkers.map((marker) => (
+              <Marker 
+                key={marker.id} 
+                position={marker.position}
+                icon={getMarkerIcon(marker.type)}
+                eventHandlers={{
+                  click: () => setSelectedLocation(marker),
+                }}
+              >
+                <Popup>
+                  <div style={{ textAlign: 'center' }}>
+                    <strong>{marker.name}</strong>
+                    <br />
+                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{marker.type === 'base' ? 'Posko' : marker.status}</span>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
         </div>
 
         {/* Sidebar Analysis */}
@@ -148,7 +224,15 @@ export default function PetaSpasial() {
                   <span className={`status-badge status-${selectedLocation.type}`}>{selectedLocation.status}</span>
                 </div>
                 <p className="detail-desc">{selectedLocation.desc}</p>
-                <button className="btn-action-map">Lihat Laporan Lengkap</button>
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${selectedLocation.position[0]},${selectedLocation.position[1]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-action-map"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none', marginTop: '10px' }}
+                >
+                  <MapPin size={16} /> Buka di Google Maps
+                </a>
               </div>
             </div>
           ) : (
@@ -187,7 +271,7 @@ export default function PetaSpasial() {
                   style={{display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', cursor: 'pointer', background: selectedLocation?.id === marker.id ? '#f0fdf4' : 'transparent', border: selectedLocation?.id === marker.id ? '1px solid #059669' : '1px solid transparent'}}
                 >
                    <div style={{color: getMarkerColor(marker.type), display: 'flex'}}>
-                      {marker.type === 'base' ? <Shield size={18} /> : marker.type === 'danger' || marker.type === 'warning' ? <AlertTriangle size={18} /> : marker.type === 'post' ? <MapPin size={18} /> : <div style={{width: 14, height: 14, background: '#10b981', borderRadius: '50%'}}></div>}
+                      {marker.type === 'base' ? <Shield size={18} /> : marker.type === 'danger' || marker.type === 'warning' ? <AlertTriangle size={18} /> : <MapPin size={18} />}
                    </div>
                    <div style={{fontSize: '0.9rem', fontWeight: '500', color: '#334155'}}>{marker.name}</div>
                 </div>
@@ -226,11 +310,10 @@ export default function PetaSpasial() {
               <span>Legenda Peta</span>
             </div>
             <div className="map-legend">
-              <div className="legend-item"><div className="legend-dot" style={{background: '#059669'}}></div> Markas</div>
-              <div className="legend-item"><div className="legend-dot" style={{background: '#10b981'}}></div> Wilayah Aman</div>
-              <div className="legend-item"><div className="legend-dot" style={{background: '#ef4444'}}></div> Rawan</div>
-              <div className="legend-item"><div className="legend-dot" style={{background: '#f59e0b'}}></div> Waspada</div>
-              <div className="legend-item"><div className="legend-dot" style={{background: '#3b82f6'}}></div> Pos Jaga</div>
+              <div className="legend-item"><div className="legend-dot" style={{background: getMarkerColor('base')}}></div> Markas</div>
+              <div className="legend-item"><div className="legend-dot" style={{background: getMarkerColor('danger')}}></div> Rawan (Siaga)</div>
+              <div className="legend-item"><div className="legend-dot" style={{background: getMarkerColor('warning')}}></div> Waspada</div>
+              <div className="legend-item"><div className="legend-dot" style={{background: getMarkerColor('safe')}}></div> Aman</div>
             </div>
           </div>
         </div>

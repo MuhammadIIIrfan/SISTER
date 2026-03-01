@@ -1,4 +1,4 @@
-import { Shield, AlertTriangle, CheckCircle, Clock, MapPin, Calendar, Search, Filter, Target, Users, Plus, X, Save, Edit, Loader2 } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Clock, MapPin, Calendar, Search, Filter, Target, Users, Plus, X, Save, Edit, Loader2, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import '../styles/keamanan.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
@@ -8,6 +8,7 @@ export default function Keamanan() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notification, setNotification] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationStatus, setLocationStatus] = useState('idle'); // idle, loading, success, error
   
   // Form State untuk Laporan Baru
   const [formData, setFormData] = useState({
@@ -15,7 +16,9 @@ export default function Keamanan() {
     location: '',
     type: 'Ideologi',
     description: '',
-    reporter: ''
+    reporter: '',
+    latitude: null,
+    longitude: null
   });
 
   // Cek User Login dari LocalStorage untuk hak akses edit
@@ -49,6 +52,27 @@ export default function Keamanan() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleGetLocation = () => {
+    setLocationStatus('loading');
+    if (!navigator.geolocation) {
+      setLocationStatus('error');
+      alert('Geolocation tidak didukung oleh browser ini.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData(prev => ({ ...prev, latitude: position.coords.latitude, longitude: position.coords.longitude }));
+        setLocationStatus('success');
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        setLocationStatus('error');
+        alert('Gagal mengambil lokasi. Pastikan GPS aktif dan izin diberikan.');
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -61,7 +85,8 @@ export default function Keamanan() {
         if (res.ok) {
             setNotification({ type: 'success', message: 'Laporan berhasil dikirim!' });
             setIsModalOpen(false);
-            setFormData({ title: '', location: '', type: 'Ideologi', description: '', reporter: '' });
+            setFormData({ title: '', location: '', type: 'Ideologi', description: '', reporter: '', latitude: null, longitude: null });
+            setLocationStatus('idle');
             fetchIncidents();
         } else {
             const errorData = await res.json().catch(() => ({}));
@@ -94,6 +119,25 @@ export default function Keamanan() {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus laporan ini secara permanen?')) return;
+
+    try {
+        const res = await fetch(`http://localhost:5000/api/incidents/${id}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            setNotification({ type: 'success', message: 'Laporan berhasil dihapus' });
+            fetchIncidents();
+        } else {
+            setNotification({ type: 'error', message: 'Gagal menghapus laporan' });
+        }
+    } catch (err) {
+        console.error("Gagal menghapus:", err);
+        setNotification({ type: 'error', message: 'Terjadi kesalahan koneksi' });
+    }
+  };
+
   const parseDate = (dateStr) => {
     const date = new Date(dateStr);
     return {
@@ -109,7 +153,7 @@ export default function Keamanan() {
         <div>
           <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">SISTEM PERTAHANAN WILAYAH</h1>
-          <p className="page-subtitle">Monitoring Geografi, Demografi, dan Kondisi Sosial (Ipoleksosbudhankam)</p>
+          <p className="page-subtitle">Pantauan Pelaporan Masyarakat Wilayah Koramil 429-09 Way Jepara</p>
         </div>
       </div>
 
@@ -213,6 +257,28 @@ export default function Keamanan() {
                         <option value="Proses">Proses</option>
                         <option value="Selesai">Selesai</option>
                     </select>
+
+                    {user.role === 'danramil' && (
+                      <button 
+                        onClick={() => handleDelete(item.id)}
+                        style={{
+                          marginTop: '8px',
+                          background: '#fee2e2',
+                          color: '#ef4444',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600'
+                        }}
+                      >
+                        <Trash2 size={14} /> Hapus
+                      </button>
+                    )}
                 </div>
               ) : (
                 <>
@@ -250,7 +316,16 @@ export default function Keamanan() {
               </div>
               <div className="form-group">
                 <label className="form-label">Lokasi</label>
-                <input type="text" name="location" className="form-input" placeholder="Desa / Dusun" value={formData.location} onChange={handleInputChange} required />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input type="text" name="location" className="form-input" placeholder="Desa / Dusun" value={formData.location} onChange={handleInputChange} required style={{ flex: 1 }} />
+                  <button type="button" onClick={handleGetLocation} className="btn-icon" style={{ background: locationStatus === 'success' ? '#dcfce7' : '#f1f5f9', color: locationStatus === 'success' ? '#166534' : '#475569', border: '1px solid #cbd5e1', padding: '0 12px' }} title="Ambil Lokasi GPS">
+                    {locationStatus === 'loading' ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}
+                    {locationStatus === 'success' ? 'Terkunci' : 'GPS'}
+                  </button>
+                </div>
+                {formData.latitude && (
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>Koordinat: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}</div>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Jenis Ancaman (Ipoleksosbudhankam)</label>

@@ -158,6 +158,12 @@ async function initDb() {
         // Abaikan error jika kolom sudah ada
     }
 
+    // MIGRATION: Tambah kolom koordinat GPS
+    try {
+        await dbRun("ALTER TABLE incidents ADD COLUMN latitude REAL");
+        await dbRun("ALTER TABLE incidents ADD COLUMN longitude REAL");
+    } catch (e) {}
+
     const incidentCount = await dbGet("SELECT count(*) as count FROM incidents");
     if (incidentCount.count === 0) {
         console.log("Seeding incidents...");
@@ -169,6 +175,15 @@ async function initDb() {
             await dbRun("INSERT INTO incidents (title, location, date, type, severity, status, description, reporter) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", inc);
         }
     }
+
+    // 6. Tabel Notifications
+    await dbRun(`CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        message TEXT,
+        time TEXT,
+        read INTEGER DEFAULT 0
+    )`);
 }
 
 // --- ENDPOINTS ---
@@ -329,16 +344,24 @@ app.get('/api/incidents', async (req, res) => {
 });
 
 app.post('/api/incidents', async (req, res) => {
-    const { title, location, type, description, reporter } = req.body;
+    const { title, location, type, description, reporter, latitude, longitude } = req.body;
     const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const severity = 'Waspada'; // Default severity
     const status = 'Baru'; // Default status
     
     try {
         const result = await dbRun(
-            "INSERT INTO incidents (title, location, date, type, severity, status, description, reporter) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [title, location, date, type, severity, status, description, reporter]
+            "INSERT INTO incidents (title, location, date, type, severity, status, description, reporter, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [title, location, date, type, severity, status, description, reporter, latitude, longitude]
         );
+
+        // Buat Notifikasi otomatis saat ada laporan masuk
+        const notifTime = new Date().toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        await dbRun(
+            "INSERT INTO notifications (title, message, time, read) VALUES (?, ?, ?, 0)",
+            ['Laporan Warga Baru', `${title} di ${location} (${type})`, notifTime]
+        );
+
         const newItem = await dbGet("SELECT * FROM incidents WHERE id = ?", [result.lastID]);
         res.status(201).json(newItem);
     } catch (err) {
@@ -353,6 +376,17 @@ app.put('/api/incidents/:id', async (req, res) => {
         await dbRun("UPDATE incidents SET severity=?, status=? WHERE id=?", [severity, status, id]);
         const updated = await dbGet("SELECT * FROM incidents WHERE id = ?", [id]);
         res.json(updated);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.delete('/api/incidents/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+        const result = await dbRun("DELETE FROM incidents WHERE id = ?", [id]);
+        if (result.changes > 0) res.json({ message: "Laporan dihapus", id });
+        else res.status(404).json({ message: "Laporan tidak ditemukan" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -409,6 +443,26 @@ app.delete('/api/personel/:id', async (req, res) => {
         const result = await dbRun("DELETE FROM personel WHERE id = ?", [id]);
         if (result.changes > 0) res.json({ message: "Personel dihapus", id });
         else res.status(404).json({ message: "Personel tidak ditemukan" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// --- ENDPOINTS NOTIFIKASI ---
+
+app.get('/api/notifications', async (req, res) => {
+    try {
+        const rows = await dbAll("SELECT * FROM notifications ORDER BY id DESC LIMIT 20");
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.put('/api/notifications/mark-read', async (req, res) => {
+    try {
+        await dbRun("UPDATE notifications SET read = 1 WHERE read = 0");
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

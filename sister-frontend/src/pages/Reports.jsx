@@ -161,7 +161,7 @@ export default function Reports() {
         <div>
           <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">LAPORAN GIAT BABINSA</h1>
-          <p className="page-subtitle">Digitalisasi pelaporan kegiatan harian Babinsa Koramil 429-09</p>
+          <p className="page-subtitle">Digitalisasi pelaporan kegiatan harian Babinsa Koramil 429-09 Way Jepara</p>
         </div>
       </div>
 

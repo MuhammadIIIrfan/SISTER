@@ -1,4 +1,4 @@
-import { Hash, Plus, Edit, Trash2, X, Save, Camera, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Hash, Plus, Edit, Trash2, X, Save, Camera, CheckCircle, AlertTriangle, Phone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import '../styles/personel.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
@@ -146,6 +146,13 @@ export default function Personel() {
   return (
     <div className="personel-container">
       <style>{`
+        .personel-container {
+          background-color: #f8fafc; /* Slate 50 (Terang) */
+          background-image: 
+            radial-gradient(at 50% 0%, rgba(5, 150, 105, 0.1) 0px, transparent 70%),
+            radial-gradient(at 90% 10%, rgba(37, 99, 235, 0.05) 0px, transparent 50%);
+          min-height: 100vh;
+        }
         @keyframes slideIn {
           from { transform: translateY(-20px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
@@ -221,6 +228,11 @@ export default function Personel() {
                 <div className="nrp-pill">
                   <Hash size={12} /> <span>{danramil.nrp}</span>
                 </div>
+                {danramil.kontak && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                    <Phone size={12} /> <span>{danramil.kontak}</span>
+                  </div>
+                )}
                 <div className="personel-divider"></div>
                 <p className="personel-jabatan">{danramil.jabatan}</p>
               </div>
@@ -246,6 +258,11 @@ export default function Personel() {
                 <div className="nrp-pill">
                   <Hash size={12} /> <span>{batuud.nrp}</span>
                 </div>
+                {batuud.kontak && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                    <Phone size={12} /> <span>{batuud.kontak}</span>
+                  </div>
+                )}
                 <div className="personel-divider"></div>
                 <p className="personel-jabatan">{batuud.jabatan}</p>
               </div>
@@ -274,6 +291,11 @@ export default function Personel() {
                   <div className="nrp-pill">
                     <Hash size={12} /> <span>{person.nrp}</span>
                   </div>
+                  {person.kontak && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                      <Phone size={12} /> <span>{person.kontak}</span>
+                    </div>
+                  )}
                   <div className="personel-divider"></div>
                   <p className="personel-jabatan">Babinsa {person.wilayah}</p>
                 </div>
@@ -321,7 +343,7 @@ export default function Personel() {
               </div>
               <div className="form-group">
                 <label className="form-label">Kontak (HP/WA)</label>
-                <input type="text" name="kontak" className="form-input" value={formData.kontak} onChange={handleInputChange} />
+                <input type="tel" name="kontak" className="form-input" placeholder="08xxxxxxxxxx" value={formData.kontak} onChange={handleInputChange} />
               </div>
               <div className="form-group">
                 <label className="form-label">Foto Profil</label>
