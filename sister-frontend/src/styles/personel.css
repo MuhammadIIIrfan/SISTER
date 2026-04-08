@@ -162,8 +162,8 @@
 .avatar-container {
   position: relative;
   margin: -120px auto 1.5rem auto;
-  width: 180px;
-  height: 240px;
+  width: 210px; /* Ditingkatkan dari 180px */
+  height: 280px; /* Ditingkatkan dari 240px, menjaga rasio 3:4 */
   aspect-ratio: 3 / 4; /* Rasio 3:4 Presisi */
   border-radius: 12px;
   padding: 6px; /* Bingkai putih lebih tebal */

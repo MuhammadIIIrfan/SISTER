@@ -9,6 +9,8 @@ export default function Keamanan() {
   const [notification, setNotification] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locationStatus, setLocationStatus] = useState('idle'); // idle, loading, success, error
+  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
+  const [incidentToDeleteId, setIncidentToDeleteId] = useState(null);
   
   // Form State untuk Laporan Baru
   const [formData, setFormData] = useState({
@@ -120,10 +122,16 @@ export default function Keamanan() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus laporan ini secara permanen?')) return;
+    setIncidentToDeleteId(id);
+    setIsDeleteConfirmModalOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!incidentToDeleteId) return;
+
+    setIsSubmitting(true);
     try {
-        const res = await fetch(`http://localhost:5000/api/incidents/${id}`, {
+        const res = await fetch(`http://localhost:5000/api/incidents/${incidentToDeleteId}`, {
             method: 'DELETE'
         });
         if (res.ok) {
@@ -135,6 +143,10 @@ export default function Keamanan() {
     } catch (err) {
         console.error("Gagal menghapus:", err);
         setNotification({ type: 'error', message: 'Terjadi kesalahan koneksi' });
+    } finally {
+        setIsSubmitting(false);
+        setIsDeleteConfirmModalOpen(false);
+        setIncidentToDeleteId(null);
     }
   };
 
@@ -153,7 +165,8 @@ export default function Keamanan() {
         <div>
           <img src={logoAsset} alt="Logo Korem" className="page-header-logo" />
           <h1 className="page-title">SISTEM PERTAHANAN WILAYAH</h1>
-          <p className="page-subtitle">Pantauan Pelaporan Masyarakat Wilayah Koramil 429-09 Way Jepara</p>
+          <p className="page-subtitle">Pantauan Pelaporan Masyarakat Wilayah Koramil 429-09 Way Jepara
+          </p>
         </div>
       </div>
 
@@ -355,6 +368,28 @@ export default function Keamanan() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus */}
+      {isDeleteConfirmModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: '#ef4444' }}>
+              <AlertTriangle size={48} />
+            </div>
+            <h3 className="modal-title" style={{ marginBottom: '1rem' }}>Konfirmasi Hapus Laporan</h3>
+            <p style={{ color: '#64748b', marginBottom: '2rem', lineHeight: '1.5' }}>
+              Apakah Anda yakin ingin menghapus laporan ini secara permanen? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="modal-actions" style={{ justifyContent: 'center' }}>
+              <button type="button" className="btn-cancel" onClick={() => setIsDeleteConfirmModalOpen(false)} disabled={isSubmitting}>Batal</button>
+              <button type="button" className="btn-save" onClick={confirmDelete} disabled={isSubmitting} style={{ opacity: isSubmitting ? 0.7 : 1, background: '#ef4444' }}>
+                {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                {isSubmitting ? ' Menghapus...' : ' Ya, Hapus'}
+              </button>
+            </div>
           </div>
         </div>
       )}
