@@ -70,10 +70,17 @@ export default function PetaSpasial() {
 
   // Fetch Data Incidents dari Backend
   useEffect(() => {
-    fetch('http://localhost:5000/api/incidents')
-      .then(res => res.json())
-      .then(data => setIncidents(data))
-      .catch(err => console.error("Error fetching incidents:", err));
+    const fetchIncidents = () => {
+      fetch('http://localhost:5000/api/incidents')
+        .then(res => res.json())
+        .then(data => setIncidents(data))
+        .catch(err => console.error("Error fetching incidents:", err));
+    };
+
+    fetchIncidents();
+    // Polling setiap 10 detik agar sebaran titik ancaman di peta muncul secara realtime
+    const intervalId = setInterval(fetchIncidents, 10000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Mapping Lokasi ke Koordinat Lat/Lng (Way Jepara & Braja Selebah)

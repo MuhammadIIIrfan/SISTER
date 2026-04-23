@@ -40,6 +40,9 @@ export default function Keamanan() {
 
   useEffect(() => {
     fetchIncidents();
+    // Polling data setiap 10 detik agar laporan warga otomatis masuk (Real-time)
+    const intervalId = setInterval(fetchIncidents, 10000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Auto-hide notification
@@ -183,18 +186,16 @@ export default function Keamanan() {
         </div>
       )}
 
-      {/* Tombol Lapor Besar (Hanya untuk Masyarakat Umum / Belum Login) */}
-      {!user && (
-        <div className="report-action-container">
-          <button className="btn-create-report-large" onClick={() => setIsModalOpen(true)}>
-            <div className="btn-icon-large"><Plus size={32} /></div>
-            <div className="btn-text-large">
-              <span className="btn-title">LAPOR KEJADIAN</span>
-              <span className="btn-subtitle">Laporkan hal mencurigakan atau ancaman di sekitar Anda</span>
-            </div>
-          </button>
-        </div>
-      )}
+      {/* Tombol Lapor Besar (Tersedia untuk semua: Masyarakat & Personel) */}
+      <div className="report-action-container">
+        <button className="btn-create-report-large" onClick={() => setIsModalOpen(true)}>
+          <div className="btn-icon-large"><Plus size={32} /></div>
+          <div className="btn-text-large">
+            <span className="btn-title">LAPOR KEJADIAN</span>
+            <span className="btn-subtitle">Laporkan hal mencurigakan atau ancaman di sekitar Anda</span>
+          </div>
+        </button>
+      </div>
 
       {/* Content Section */}
       <div className="section-title">

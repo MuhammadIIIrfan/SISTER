@@ -7,6 +7,13 @@ export default function Piket() {
   const [activeTab, setActiveTab] = useState('koramil');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
+  const [selectedMonthYear, setSelectedMonthYear] = useState(new Date().toISOString().substring(0, 7)); // YYYY-MM format
+  // New state for excluded personnel
+  const [excludedPersonnelIds, setExcludedPersonnelIds] = useState([]);
+  const [allPersonnelForExclusion, setAllPersonnelForExclusion] = useState([]); // To store all personnel for the dropdown
+  const [kodimDatesInput, setKodimDatesInput] = useState('');
+  const [koremDatesInput, setKoremDatesInput] = useState('');
+
   // Mengecek apakah suatu tanggal adalah hari ini
   const checkIsToday = (isoDate) => {
     const d = new Date(isoDate);
@@ -17,99 +24,153 @@ export default function Piket() {
   };
 
   // Generator Jadwal Otomatis untuk 30 Hari
-  const generateSchedule = (apiPersonnel = null) => {
+  const generateSchedule = (apiPersonnel = null, excludedIds = [], monthYear = null, kodimDatesStr = '', koremDatesStr = '') => {
     const newSchedules = { koramil: [], kodim: [], korem: [] };
-    const today = new Date();
+
+    const parseDates = (str) => {
+      if (!str) return [];
+      return str.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 1 && n <= 31);
+    };
+    const kodimDays = parseDates(kodimDatesStr);
+    const koremDays = parseDates(koremDatesStr);
+    
+    let year, month;
+    if (monthYear) {
+      const [y, m] = monthYear.split('-');
+      year = parseInt(y, 10);
+      month = parseInt(m, 10) - 1; // getMonth() adalah 0-indexed di JavaScript
+    } else {
+      const now = new Date();
+      year = now.getFullYear();
+      month = now.getMonth();
+    }
+    
+    const startDate = new Date(year, month, 1);
 
     let pool = [];
     let koremPers = null;
 
-    // Jika ada data personel dari API, gunakan data tersebut (kecuali Danramil)
+    // 1. Determine Korem Personnel (Pawas Korem)
+    // This should be chosen from ALL available personnel (excluding Danramil),
+    // regardless of daily piket exclusions.
     if (apiPersonnel && apiPersonnel.length > 0) {
-      const filtered = apiPersonnel.filter(p => p.jabatan !== 'Danramil');
-      if (filtered.length > 0) {
-        pool = filtered.map(p => {
+        const danramilFilteredPersonnel = apiPersonnel.filter(p => p.jabatan !== 'Danramil');
+        const batuudCandidate = danramilFilteredPersonnel.find(p => p.jabatan === 'Batuud');
+
+        if (batuudCandidate) {
+            const parts = batuudCandidate.nama.trim().split(' ');
+            let initial = '';
+            if (parts.length >= 2) { initial = (parts[0][0] || '') + (parts[1][0] || ''); }
+            else if (parts.length === 1 && parts[0].length > 0) { initial = (parts[0][0] || '') + (parts[0][1] || ''); }
+            koremPers = { name: batuudCandidate.nama, role: batuudCandidate.jabatan, initial: initial.toUpperCase(), rank: batuudCandidate.pangkat };
+        } else if (danramilFilteredPersonnel.length > 0) {
+            // Fallback if no Batuud, pick first available personnel (not Danramil)
+            const firstAvailable = danramilFilteredPersonnel[0];
+            const parts = firstAvailable.nama.trim().split(' ');
+            let initial = '';
+            if (parts.length >= 2) { initial = (parts[0][0] || '') + (parts[1][0] || ''); }
+            else if (parts.length === 1 && parts[0].length > 0) { initial = (parts[0][0] || '') + (parts[0][1] || ''); }
+            koremPers = { name: firstAvailable.nama, role: firstAvailable.jabatan, initial: initial.toUpperCase(), rank: firstAvailable.pangkat };
+        }
+    }
+    // Absolute fallback for Korem personnel if no API personnel or no suitable candidate found
+    if (!koremPers) {
+        koremPers = { name: 'Mayor Inf Suhendra', role: 'Pawas Korem', initial: 'MS', rank: 'Mayor Inf' };
+    }
+
+    // 2. Prepare the pool for DAILY piket (respecting exclusions)
+    if (apiPersonnel && apiPersonnel.length > 0) {
+      const filteredForDailyPiket = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !excludedIds.includes(p.id));
+      if (filteredForDailyPiket.length > 0) {
+        pool = filteredForDailyPiket.map(p => {
           const parts = p.nama.trim().split(' ');
           let initial = '';
-          if (parts.length >= 2) {
-            initial = (parts[0][0] || '') + (parts[1][0] || '');
-          } else if (parts.length === 1 && parts[0].length > 0) {
-            initial = (parts[0][0] || '') + (parts[0][1] || '');
-          }
-          return { name: p.nama, role: p.jabatan, initial: initial.toUpperCase() };
+          if (parts.length >= 2) { initial = (parts[0][0] || '') + (parts[1][0] || ''); }
+          else if (parts.length === 1 && parts[0].length > 0) { initial = (parts[0][0] || '') + (parts[0][1] || ''); }
+          return { name: p.nama, role: p.jabatan, initial: initial.toUpperCase(), id: p.id, rank: p.pangkat };
         });
-
-        // Tugaskan Batuud sebagai Pawas Korem, atau anggota pertama jika Batuud tidak ada
-        koremPers = pool.find(p => p.role === 'Batuud') || pool[0];
-        
-        // Pisahkan personel Korem dari pool piket harian agar tidak mendapat dobel shift
-        // (Kecuali jika sisa personel kurang dari 2, maka biarkan saja agar jadwal tidak kosong)
-        const dailyPool = pool.filter(p => p.name !== koremPers.name);
-        if (dailyPool.length >= 2) {
-          pool = dailyPool;
-        }
       }
     }
 
-    // Gunakan data default jika gagal / tidak ada API / pool kosong
+    // 3. Fallback for daily piket pool if it's empty after filtering/exclusion
     if (pool.length === 0) {
       const defaultKoramil = [
-        { name: 'Serka Dedi Mulyadi', role: 'Ba Jaga', initial: 'DM' },
-        { name: 'Kopda Rian Saputra', role: 'Ta Jaga', initial: 'RS' },
-        { name: 'Sertu Agus Pratama', role: 'Ba Jaga', initial: 'AP' },
-        { name: 'Praka Dimas', role: 'Ta Jaga', initial: 'PD' },
-        { name: 'Serda Tono', role: 'Ba Jaga', initial: 'ST' },
-        { name: 'Kopka Yudi', role: 'Ta Jaga', initial: 'KY' }
+        { name: 'Serka Dedi Mulyadi', role: 'Ba Jaga', initial: 'DM', rank: 'Serka' },
+        { name: 'Kopda Rian Saputra', role: 'Ta Jaga', initial: 'RS', rank: 'Kopda' },
+        { name: 'Sertu Agus Pratama', role: 'Ba Jaga', initial: 'AP', rank: 'Sertu' },
+        { name: 'Praka Dimas', role: 'Ta Jaga', initial: 'PD', rank: 'Praka' },
+        { name: 'Serda Tono', role: 'Ba Jaga', initial: 'ST', rank: 'Serda' },
+        { name: 'Kopka Yudi', role: 'Ta Jaga', initial: 'KY', rank: 'Kopka' }
       ];
       const defaultKodim = [
-        { name: 'Peltu Budi Santoso', role: 'Pa Jaga', initial: 'BS' },
-        { name: 'Serma Hendra', role: 'Ba Jaga', initial: 'SH' },
-        { name: 'Kopda Arif', role: 'Ta Jaga', initial: 'KA' },
-        { name: 'Pelda Kurniawan', role: 'Pa Jaga', initial: 'PK' },
-        { name: 'Sertu Bowo', role: 'Ba Jaga', initial: 'SB' },
-        { name: 'Praka Eko', role: 'Ta Jaga', initial: 'PE' }
+        { name: 'Peltu Budi Santoso', role: 'Pa Jaga', initial: 'BS', rank: 'Peltu' },
+        { name: 'Serma Hendra', role: 'Ba Jaga', initial: 'SH', rank: 'Serma' },
+        { name: 'Kopda Arif', role: 'Ta Jaga', initial: 'KA', rank: 'Kopda' },
+        { name: 'Pelda Kurniawan', role: 'Pa Jaga', initial: 'PK', rank: 'Pelda' },
+        { name: 'Sertu Bowo', role: 'Ba Jaga', initial: 'SB', rank: 'Sertu' },
+        { name: 'Praka Eko', role: 'Ta Jaga', initial: 'PE', rank: 'Praka' }
       ];
       pool = [...defaultKoramil, ...defaultKodim];
-      koremPers = { name: 'Mayor Inf Suhendra', role: 'Pawas Korem', initial: 'MS' };
     }
 
-    // Tambahkan jadwal Korem untuk 1 bulan penuh (1 entri)
-    const monthStr = today.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-    newSchedules.korem.push({
-      id: `korem-monthly`,
-      day: 'Periode',
-      date: monthStr,
-      fullDate: today.toISOString(),
-      isMonthly: true,
-      shift: 'Siaga 1 (Satu Bulan)',
-      location: 'Makorem 043/Gatam',
-      personnel: [koremPers]
+    // Generate Jadwal Korem (hanya pada tanggal spesifik yang dipilih)
+    koremDays.forEach((d, idx) => {
+      const date = new Date(year, month, d);
+      if (date.getMonth() !== month) return; // Abaikan jika tanggal tidak valid (cth: 31 Feb)
+      
+      newSchedules.korem.push({
+        id: `korem-${d}-${idx}`,
+        day: date.toLocaleDateString('id-ID', { weekday: 'long' }),
+        date: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        fullDate: date.toISOString(),
+        shift: '08:00 - 08:00 (24 Jam)',
+        location: 'Makorem 043/Gatam',
+        personnel: [koremPers]
+      });
     });
+    // Urutkan jadwal korem berdasarkan tanggal
+    newSchedules.korem.sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
 
+    const numberOfDaysInMonth = new Date(year, month + 1, 0).getDate(); // Get number of days in the selected month
     // Algoritma Greedy: Lacak jumlah shift setiap personel untuk memastikan pembagian adil
     const shiftCounts = {};
     pool.forEach(p => { shiftCounts[p.name] = 0; });
 
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
+    for (let i = 0; i < numberOfDaysInMonth; i++) {
+      const currentDay = i + 1;
+      const date = new Date(year, month, currentDay); // Start from 1st of the month
       const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       const dayStr = date.toLocaleDateString('id-ID', { weekday: 'long' });
       const fullDate = date.toISOString();
 
-      // Greedy Choice: Urutkan berdasarkan shift paling sedikit
-      // Jika jumlah shift sama, gunakan nama untuk menjaga konsistensi urutan
-      pool.sort((a, b) => (shiftCounts[a.name] - shiftCounts[b.name]) || a.name.localeCompare(b.name));
-
-      // Ambil 2 orang dengan shift paling sedikit (untuk masing-masing Koramil dan Kodim)
-      const personKoramil = pool[0];
-      const personKodim = pool.length > 1 ? pool[1] : pool[0];
-
-      // Update jumlah shift mereka
-      shiftCounts[personKoramil.name]++;
-      if (pool.length > 1) {
-        shiftCounts[personKodim.name]++;
+      // Handle case where pool might be empty after exclusion
+      if (pool.length === 0) {
+          newSchedules.koramil.push({
+              id: `koramil-${i}`,
+              day: dayStr,
+              date: dateStr,
+              fullDate: fullDate,
+              shift: '08:00 - 08:00 (24 Jam)',
+              personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }]
+          });
+          // Tetap pastikan Kodim dicek walau kosong
+          if (kodimDays.includes(currentDay)) {
+              newSchedules.kodim.push({
+                  id: `kodim-${i}`,
+                  day: dayStr,
+                  date: dateStr,
+                  fullDate: fullDate,
+                  shift: '08:00 - 08:00 (24 Jam)',
+                  personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }]
+              });
+          }
+          continue; // Skip to next day
       }
+
+      // Greedy Choice untuk Koramil
+      pool.sort((a, b) => (shiftCounts[a.name] - shiftCounts[b.name]) || a.name.localeCompare(b.name));
+      const personKoramil = pool[0];
+      shiftCounts[personKoramil.name]++;
 
       newSchedules.koramil.push({
         id: `koramil-${i}`,
@@ -120,22 +181,29 @@ export default function Piket() {
         personnel: [personKoramil]
       });
 
-      newSchedules.kodim.push({
-        id: `kodim-${i}`,
-        day: dayStr,
-        date: dateStr,
-        fullDate: fullDate,
-        shift: '08:00 - 08:00 (24 Jam)',
-        personnel: [personKodim]
-      });
+      // Jika hari ini ada jadwal Kodim
+      if (kodimDays.includes(currentDay)) {
+        pool.sort((a, b) => (shiftCounts[a.name] - shiftCounts[b.name]) || a.name.localeCompare(b.name));
+        const personKodim = pool[0];
+        shiftCounts[personKodim.name]++;
+
+        newSchedules.kodim.push({
+          id: `kodim-${i}`,
+          day: dayStr,
+          date: dateStr,
+          fullDate: fullDate,
+          shift: '08:00 - 08:00 (24 Jam)',
+          personnel: [personKodim]
+        });
+      }
     }
     return newSchedules;
   };
 
   // Mengambil state jadwal dari localStorage, atau render default jika kosong
   const [schedules, setSchedules] = useState(() => {
-    const saved = localStorage.getItem('piketData');
-    return saved ? JSON.parse(saved) : generateSchedule();
+    // Initial state will be set by the useEffect after fetching personnel
+    return localStorage.getItem('piketData') ? JSON.parse(localStorage.getItem('piketData')) : { koramil: [], kodim: [], korem: [] };
   });
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -150,6 +218,36 @@ export default function Piket() {
     }
   }, [notification]);
 
+  // Fetch all personnel for the exclusion list and initial schedule when component mounts
+  useEffect(() => {
+    const fetchPersonelAndInitSchedule = async () => {
+        try {
+            const res = await fetch('http://localhost:5000/api/personel');
+            const data = await res.json();
+            setAllPersonnelForExclusion(data);
+            
+            // Generate initial schedule if none saved, using fetched personnel
+            if (!localStorage.getItem('piketData')) {
+                const currentMonthYear = new Date().toISOString().substring(0, 7);
+                const initialSchedules = generateSchedule(data, [], currentMonthYear, '5, 15, 25', '10, 20');
+                setSchedules(initialSchedules);
+                localStorage.setItem('piketData', JSON.stringify(initialSchedules));
+            }
+        }
+        catch (err) {
+            console.error("Error fetching all personnel for exclusion:", err);
+            // If fetching personnel fails, still try to generate with default data
+            if (!localStorage.getItem('piketData')) {
+                const currentMonthYear = new Date().toISOString().substring(0, 7);
+                const initialSchedules = generateSchedule(null, [], currentMonthYear, '5, 15, 25', '10, 20'); // Pass null for apiPersonnel
+                setSchedules(initialSchedules);
+                localStorage.setItem('piketData', JSON.stringify(initialSchedules));
+            }
+        }
+    };
+    fetchPersonelAndInitSchedule();
+  }, []); // Empty dependency array means it runs once on mount
+
   const executeCreateSchedule = async () => {
     setIsGenerating(true);
     try {
@@ -157,11 +255,21 @@ export default function Piket() {
       const res = await fetch('http://localhost:5000/api/personel');
       const apiPersonnel = await res.json();
       
-      const newSchedules = generateSchedule(apiPersonnel);
-      setSchedules(newSchedules);
+      // Validasi: Pastikan ada cukup personel setelah pengecualian
+      const availablePersonnelForDailyPiket = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !excludedPersonnelIds.includes(p.id));
+      if (availablePersonnelForDailyPiket.length < 2) {
+        setNotification({ type: 'error', message: 'Minimal 2 personel harus tersedia untuk piket harian setelah pengecualian.' });
+        setIsConfirmModalOpen(false);
+        return; // Hentikan proses generate
+      }
+
+      // Pass excludedPersonnelIds to generateSchedule
+      const newSchedules = generateSchedule(apiPersonnel, excludedPersonnelIds, selectedMonthYear, kodimDatesInput, koremDatesInput);
+      setSchedules(newSchedules); // Update state with new schedules
       localStorage.setItem('piketData', JSON.stringify(newSchedules));
       setIsConfirmModalOpen(false);
-      setNotification({ type: 'success', message: 'Jadwal piket 30 hari berhasil dibuat!' });
+      setNotification({ type: 'success', message: 'Jadwal piket berhasil dibuat untuk bulan yang dipilih!' });
+      setExcludedPersonnelIds([]); // Reset excluded personnel after generation
     } catch (err) {
       console.error("Gagal fetch personel:", err);
       setIsConfirmModalOpen(false);
@@ -233,6 +341,12 @@ export default function Piket() {
     const dataToExport = getActiveData();
     const tabTitle = activeTab === 'koramil' ? 'Piket Koramil' : activeTab === 'kodim' ? 'Piket Kodim' : 'Piket Korem';
     const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Ambil data Batuud untuk tanda tangan
+    const batuud = allPersonnelForExclusion.find(p => p.jabatan === 'Batuud');
+    const batuudName = batuud ? batuud.nama : '_______________________';
+    const batuudRank = batuud ? batuud.pangkat : '';
+    const batuudNrp = batuud ? `NRP ${batuud.nrp}` : 'NRP _________________';
 
     let htmlContent = `
       <!DOCTYPE html>
@@ -382,6 +496,30 @@ export default function Piket() {
                       gap: 15px;
                   }
               }
+              /* Styles untuk Tanda Tangan */
+              .signature-container {
+                  margin-top: 60px;
+                  display: flex;
+                  justify-content: flex-end;
+                  page-break-inside: avoid;
+                  padding-right: 30px;
+              }
+              .signature-box {
+                  text-align: center;
+                  width: 280px;
+              }
+              .signature-space {
+                  height: 90px;
+              }
+              .signature-name {
+                  font-weight: bold;
+                  text-decoration: underline;
+                  margin-bottom: 4px;
+              }
+              .signature-details {
+                  margin: 0;
+                  font-size: 0.95rem;
+              }
           </style>
       </head>
       <body>
@@ -407,7 +545,7 @@ export default function Piket() {
         <div class="schedule-card">
           <div class="card-header">
             <div class="date-info">
-              <span class="day-name">${item.day}</span>
+              <span class="day-name">${new Date(item.fullDate).toLocaleDateString('id-ID', { weekday: 'long' })}</span>
               <span class="full-date">${item.date}</span>
             </div>
             <span class="status-badge ${statusClass}">${statusText}</span>
@@ -421,7 +559,7 @@ export default function Piket() {
             <div class="personnel-avatar">${person.initial}</div>
             <div class="personnel-info">
               <span class="personnel-name">${person.name}</span>
-              <span class="personnel-role">${person.role}</span>
+              <span class="personnel-role">${person.rank ? person.rank + ' • ' : ''}${person.role}</span>
             </div>
           </div>
         `;
@@ -439,6 +577,16 @@ export default function Piket() {
     });
 
     htmlContent += `
+          </div>
+          
+          <div class="signature-container">
+              <div class="signature-box">
+                  <p class="signature-details">Way Jepara, ${currentDate}</p>
+                  <p class="signature-details">Mengetahui,<br>Bati TUUD</p>
+                  <div class="signature-space"></div>
+                  <p class="signature-name">${batuudName}</p>
+                  <p class="signature-details">${batuudRank} ${batuudNrp}</p>
+              </div>
           </div>
       </body>
       </html>
@@ -516,7 +664,7 @@ export default function Piket() {
           <button 
             onClick={() => setIsConfirmModalOpen(true)}
             style={{
-              display: 'flex', alignItems: 'center', gap: '8px', 
+              display: 'flex', alignItems: 'center', gap: '8px',
               background: '#059669', color: 'white', 
               border: 'none', padding: '12px 24px', 
               borderRadius: '8px', fontWeight: '600', cursor: 'pointer',
@@ -525,8 +673,8 @@ export default function Piket() {
             }}
             onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <CalendarPlus size={18} /> Buat Jadwal Piket (30 Hari)
+          > 
+            <CalendarPlus size={18} /> Buat Jadwal Piket (1 Bulan)
           </button>
           <button 
             onClick={handleExportSchedule}
@@ -575,7 +723,7 @@ export default function Piket() {
             <div key={item.id} className="schedule-card">
               <div className="card-header">
                 <div className="date-info">
-                  <span className="day-name">{item.day}</span>
+                  <span className="day-name">{new Date(item.fullDate).toLocaleDateString('id-ID', { weekday: 'long' })}</span>
                   <span className="full-date">{item.date}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -602,7 +750,7 @@ export default function Piket() {
                     </div>
                     <div className="personnel-info">
                       <span className="personnel-name">{person.name}</span>
-                      <span className="personnel-role">{person.role}</span>
+                      <span className="personnel-role">{person.rank ? `${person.rank} • ` : ''}{person.role}</span>
                     </div>
                   </div>
                 ))}
@@ -662,6 +810,14 @@ export default function Piket() {
                     <input 
                       type="text" 
                       className="form-input" 
+                      placeholder="Pangkat"
+                      value={person.rank || ''} 
+                      onChange={(e) => handlePersonnelChange(idx, 'rank', e.target.value)} 
+                      style={{ flex: 1 }}
+                    />
+                    <input 
+                      type="text" 
+                      className="form-input" 
                       placeholder="Peran (cth: Ba Jaga)"
                       value={person.role} 
                       onChange={(e) => handlePersonnelChange(idx, 'role', e.target.value)} 
@@ -688,10 +844,80 @@ export default function Piket() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: '#f59e0b' }}>
               <AlertTriangle size={48} />
             </div>
-            <h3 className="modal-title" style={{ marginBottom: '1rem' }}>Buat Jadwal Baru?</h3>
-            <p style={{ color: '#64748b', marginBottom: '2rem', lineHeight: '1.5' }}>
-              Apakah Anda yakin ingin membuat jadwal baru untuk 30 hari ke depan? Jadwal piket sebelumnya akan ditimpa dan tidak dapat dikembalikan.
+            <h3 className="modal-title" style={{ marginBottom: '1rem' }}>Konfirmasi Pembuatan Jadwal</h3>
+            <p style={{ color: '#64748b', marginBottom: '1rem', lineHeight: '1.5' }}>
+              Jadwal piket sebelumnya akan ditimpa dan tidak dapat dikembalikan.
             </p>
+
+            {/* Input Pemilihan Bulan dan Tahun */}
+            <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.8rem' }}>Pilih Bulan & Tahun Jadwal:</label>
+                <input
+                    type="month"
+                    className="form-input"
+                    value={selectedMonthYear}
+                    onChange={(e) => setSelectedMonthYear(e.target.value)}
+                    style={{ width: '100%', textAlign: 'center', fontSize: '1.1rem', padding: '10px' }}
+                    required
+                />
+            </div>
+
+            {/* Input Tanggal Piket Kodim */}
+            <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
+                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.5rem' }}>Tanggal Piket Kodim (pisahkan koma, cth: 5,12,20):</label>
+                <input
+                    type="text"
+                    className="form-input"
+                    value={kodimDatesInput}
+                    onChange={(e) => setKodimDatesInput(e.target.value)}
+                    placeholder="Kosongkan jika tidak ada"
+                    style={{ textAlign: 'center' }}
+                />
+            </div>
+
+            {/* Input Tanggal Piket Korem */}
+            <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
+                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.5rem' }}>Tanggal Piket Korem (pisahkan koma, cth: 10,24):</label>
+                <input
+                    type="text"
+                    className="form-input"
+                    value={koremDatesInput}
+                    onChange={(e) => setKoremDatesInput(e.target.value)}
+                    placeholder="Kosongkan jika tidak ada"
+                    style={{ textAlign: 'center' }}
+                />
+            </div>
+
+            {/* Section for excluding personnel */}
+            <div style={{ textAlign: 'left', marginTop: '1rem', marginBottom: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.8rem' }}>Kecualikan Personel dari Piket Harian:</label>
+                <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.5rem' }}>
+                    {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
+                        <div key={person.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <input
+                                type="checkbox"
+                                id={`exclude-${person.id}`}
+                                value={person.id}
+                                checked={excludedPersonnelIds.includes(person.id)}
+                                onChange={(e) => {
+                                    const personId = person.id; // Ensure person.id is used
+                                    if (e.target.checked) {
+                                        setExcludedPersonnelIds(prev => [...prev, personId]);
+                                    } else {
+                                        setExcludedPersonnelIds(prev => prev.filter(id => id !== personId));
+                                    }
+                                }}
+                                style={{ marginRight: '0.5rem' }}
+                            />
+                            <label htmlFor={`exclude-${person.id}`} style={{ fontSize: '0.9rem', color: '#334155' }}>{person.nama} ({person.jabatan})</label>
+                        </div>
+                    ))}
+                    {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length === 0 && (
+                        <p style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>Tidak ada personel yang tersedia untuk dikecualikan.</p>
+                    )}
+                </div>
+            </div>
+
             <div className="modal-actions" style={{ justifyContent: 'center' }}>
               <button type="button" className="btn-cancel" onClick={() => setIsConfirmModalOpen(false)} disabled={isGenerating}>Batal</button>
               <button type="button" className="btn-save" onClick={executeCreateSchedule} disabled={isGenerating} style={{ opacity: isGenerating ? 0.7 : 1 }}>
