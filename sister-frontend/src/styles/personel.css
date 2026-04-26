@@ -1,4 +1,6 @@
 /* Personel Page Styling */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&family=Orbitron:wght@500;700&display=swap');
+
 
 .personel-container {
   padding: 120px 2rem 2rem;
@@ -79,7 +81,7 @@
   bottom: -10px;
   width: 60px;
   height: 3px;
-  background: #059669;
+  background: #000000;
   border-radius: 2px;
 }
 
@@ -87,9 +89,18 @@
 .leadership-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2rem;
   position: relative;
+  margin-bottom: 4rem; /* Add space between leadership and babinsa */
+}
+
+.leadership-grid {
+  display: flex;
+  flex-direction: column; /* Stack Danramil and Batuud vertically */
+  align-items: center; /* Center the cards horizontally */
+  gap: 2rem;
+  width: 100%;
+  max-width: 300px; /* Match the card width for proper centering */
+  margin: 0 auto;
 }
 
 /* Babinsa Section */
@@ -106,17 +117,17 @@
 }
 
 .personel-card-modern {
-  background: white;
-  width: 100%;
-  max-width: 320px;
-  margin: 0 auto;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
   position: relative;
+  width: 300px;
+  height: 400px;
   overflow: hidden;
-  transition: all 0.3s ease;
-  animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  opacity: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  margin: 0 auto; /* Center cards in the grid cell if cell is larger */
+  transition: all 0.3s ease; /* Keep a general transition */
+  animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; /* Keep animation */
+  opacity: 0; /* Keep animation */
 }
 
 /* Staggered Animation Delays */
@@ -129,123 +140,126 @@
 .babinsa-grid .personel-card-modern:nth-child(n+5) { animation-delay: 0.3s; }
 
 .personel-card-modern:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  /* No transform on card hover per user request */
 }
 
-.card-header-accent {
-  height: 130px;
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  background-image: linear-gradient(135deg, #059669 0%, #047857 100%), url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
-  position: relative;
+.personel-card-modern:hover .personel-card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.95),
+    rgba(0, 0, 0, 0.2)
+  );
+  transition: 0.3s ease;
 }
 
-.card-header-accent::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 30px;
-  background: white;
-  border-top-left-radius: 24px;
-  border-top-right-radius: 24px;
-}
-
-.personel-main-info {
-  text-align: center;
-  padding: 0 1.5rem 2rem;
-  position: relative;
-  z-index: 2;
-}
-
-.avatar-container {
-  position: relative;
-  margin: -120px auto 1.5rem auto;
-  width: 210px; /* Ditingkatkan dari 180px */
-  height: 280px; /* Ditingkatkan dari 240px, menjaga rasio 3:4 */
-  aspect-ratio: 3 / 4; /* Rasio 3:4 Presisi */
-  border-radius: 12px;
-  padding: 6px; /* Bingkai putih lebih tebal */
-  background: white;
-  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e2e8f0; /* Garis tepi bingkai */
-}
-
-.avatar-img {
+.personel-card-bg-img {
   width: 100%;
   height: 100%;
-  border-radius: 8px;
   object-fit: cover;
 }
 
-.personel-name {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #1e293b;
-  margin: 0 0 0.25rem;
-  line-height: 1.3;
+.personel-card-overlay {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 20px;
+  color: white;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8),
+    rgba(0, 0, 0, 0)
+  );
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
-.personel-rank-text {
-  font-size: 0.9rem;
-  color: #059669;
+.personel-text-content {
+  position: relative;
+  padding: 1rem 0;
+}
+
+.personel-text-content::before,
+.personel-text-content::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(244, 185, 66, 0.5), transparent);
+}
+
+.personel-text-content::before {
+  top: 0;
+}
+
+.personel-text-content::after {
+  bottom: 0;
+}
+
+.personel-rank {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
   font-weight: 600;
-  margin: 0 0 0.75rem 0;
+  color: #ffffff; /* Black */
   text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.25rem;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.personel-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.25rem; /* 36px */
+  font-weight: 400; /* Bebas Neue is naturally bold */
+  margin: 0;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.personel-nrp {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem; /* 14.4px */
+  color: #f4b942;
+  margin: 0.5rem 0;
+  font-weight: 500;
   letter-spacing: 1px;
 }
 
-.nrp-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #f1f5f9;
-  padding: 0.3rem 0.8rem;
-  border-radius: 50px;
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 600;
-  font-family: 'Orbitron', sans-serif;
-  margin-bottom: 1rem;
-}
-
-.personel-divider {
-  height: 1px;
-  background: #e2e8f0;
-  margin: 0.5rem 1rem 1rem;
-}
-
 .personel-jabatan {
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 600;
-  text-transform: uppercase;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem; /* 12px */
+  opacity: 0.9;
   margin: 0;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 /* Card Actions */
 .card-actions {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 1rem;
+  right: 1rem;
   display: flex;
-  gap: 5px;
+  gap: 8px;
   z-index: 10;
 }
 
 .btn-icon-action {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.2s;
 }
 

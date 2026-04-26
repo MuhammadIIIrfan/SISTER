@@ -206,12 +206,19 @@ export default function Personel() {
       <div className="organogram-view">
         <div className="leadership-section">
           <h2 className="organogram-section-title">PIMPINAN</h2>
-          
-          {/* Danramil */}
-          {danramil && (
-            <div className="personel-card-modern">
-              <div className="card-header-accent"></div>
-              <div className="personel-main-info">
+          <div className="leadership-grid">
+            {/* Danramil */}
+            {danramil && (
+              <div className="personel-card-modern">
+                <img src={danramil.foto} alt={danramil.nama} className="personel-card-bg-img" />
+                <div className="personel-card-overlay">
+                  <div className="personel-text-content">
+                    <p className="personel-rank">{danramil.pangkat}</p>
+                    <h2 className="personel-name">{danramil.nama}</h2>
+                    <h3 className="personel-nrp">{danramil.nrp}</h3>
+                    <p className="personel-jabatan">{danramil.jabatan}</p>
+                  </div>
+                </div>
                 {isDanramil && (
                   <div className="card-actions">
                     <button className="btn-icon-action edit" onClick={() => openEditModal(danramil)}><Edit size={14} /></button>
@@ -220,54 +227,30 @@ export default function Personel() {
                     */}
                   </div>
                 )}
-                <div className="avatar-container">
-                  <img src={danramil.foto} alt={danramil.nama} className="avatar-img" />
-                </div>
-                <h3 className="personel-name">{danramil.nama}</h3>
-                <p className="personel-rank-text">{danramil.pangkat}</p>
-                <div className="nrp-pill">
-                  <Hash size={12} /> <span>{danramil.nrp}</span>
-                </div>
-                {danramil.kontak && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
-                    <Phone size={12} /> <span>{danramil.kontak}</span>
-                  </div>
-                )}
-                <div className="personel-divider"></div>
-                <p className="personel-jabatan">{danramil.jabatan}</p>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Batuud */}
-          {batuud && (
-            <div className="personel-card-modern">
-              <div className="card-header-accent"></div>
-              <div className="personel-main-info">
+            {/* Batuud */}
+            {batuud && (
+              <div className="personel-card-modern">
+                <img src={batuud.foto} alt={batuud.nama} className="personel-card-bg-img" />
+                <div className="personel-card-overlay">
+                  <div className="personel-text-content">
+                    <p className="personel-rank">{batuud.pangkat}</p>
+                    <h2 className="personel-name">{batuud.nama}</h2>
+                    <h3 className="personel-nrp">{batuud.nrp}</h3>
+                    <p className="personel-jabatan">{batuud.jabatan}</p>
+                  </div>
+                </div>
                 {isDanramil && (
                   <div className="card-actions">
                     <button className="btn-icon-action edit" onClick={() => openEditModal(batuud)}><Edit size={14} /></button>
                     <button className="btn-icon-action delete" onClick={() => handleDelete(batuud.id)}><Trash2 size={14} /></button>
                   </div>
                 )}
-                <div className="avatar-container">
-                  <img src={batuud.foto} alt={batuud.nama} className="avatar-img" />
-                </div>
-                <h3 className="personel-name">{batuud.nama}</h3>
-                <p className="personel-rank-text">{batuud.pangkat}</p>
-                <div className="nrp-pill">
-                  <Hash size={12} /> <span>{batuud.nrp}</span>
-                </div>
-                {batuud.kontak && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
-                    <Phone size={12} /> <span>{batuud.kontak}</span>
-                  </div>
-                )}
-                <div className="personel-divider"></div>
-                <p className="personel-jabatan">{batuud.jabatan}</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="babinsa-section">
@@ -275,30 +258,21 @@ export default function Personel() {
           <div className="babinsa-grid">
             {babinsaData.map(person => (
               <div key={person.id} className="personel-card-modern">
-                <div className="card-header-accent"></div>
-                <div className="personel-main-info">
-                  {isDanramil && (
-                    <div className="card-actions">
-                      <button className="btn-icon-action edit" onClick={() => openEditModal(person)}><Edit size={14} /></button>
-                      <button className="btn-icon-action delete" onClick={() => handleDelete(person.id)}><Trash2 size={14} /></button>
-                    </div>
-                  )}
-                  <div className="avatar-container">
-                    <img src={person.foto} alt={person.nama} className="avatar-img" />
+                <img src={person.foto} alt={person.nama} className="personel-card-bg-img" />
+                <div className="personel-card-overlay">
+                  <div className="personel-text-content">
+                    <p className="personel-rank">{person.pangkat}</p>
+                    <h2 className="personel-name">{person.nama}</h2>
+                    <h3 className="personel-nrp">{person.nrp}</h3>
+                    <p className="personel-jabatan">{`Babinsa ${person.wilayah}`}</p>
                   </div>
-                  <h3 className="personel-name">{person.nama}</h3>
-                  <p className="personel-rank-text">{person.pangkat}</p>
-                  <div className="nrp-pill">
-                    <Hash size={12} /> <span>{person.nrp}</span>
-                  </div>
-                  {person.kontak && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
-                      <Phone size={12} /> <span>{person.kontak}</span>
-                    </div>
-                  )}
-                  <div className="personel-divider"></div>
-                  <p className="personel-jabatan">Babinsa {person.wilayah}</p>
                 </div>
+                {isDanramil && (
+                  <div className="card-actions">
+                    <button className="btn-icon-action edit" onClick={() => openEditModal(person)}><Edit size={14} /></button>
+                    <button className="btn-icon-action delete" onClick={() => handleDelete(person.id)}><Trash2 size={14} /></button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

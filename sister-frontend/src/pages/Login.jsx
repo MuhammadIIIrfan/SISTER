@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, ArrowRight, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { User, Lock, ArrowRight, Shield, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import '../styles/login.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 import backgroundAsset from '../assets/koramil09.jpg';
@@ -76,6 +76,29 @@ export default function Login() {
           from { transform: translateY(-20px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
+        .login-card {
+          position: relative;
+        }
+        .login-close-btn {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.5);
+          cursor: pointer;
+          padding: 5px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          z-index: 10;
+        }
+        .login-close-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+        }
       `}</style>
 
       {/* Notification Popup */}
@@ -104,6 +127,9 @@ export default function Login() {
       )}
       
       <div className="login-card">
+        <button onClick={() => navigate('/')} className="login-close-btn" title="Kembali ke Dashboard">
+          <X size={24} />
+        </button>
         <div className="login-header">
           <img src={logoAsset} alt="Logo SISTER" className="login-logo" />
           <h1 className="login-title">SISTER</h1>

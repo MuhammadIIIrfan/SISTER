@@ -187,15 +187,17 @@ export default function Keamanan() {
       )}
 
       {/* Tombol Lapor Besar (Tersedia untuk semua: Masyarakat & Personel) */}
-      <div className="report-action-container">
-        <button className="btn-create-report-large" onClick={() => setIsModalOpen(true)}>
-          <div className="btn-icon-large"><Plus size={32} /></div>
-          <div className="btn-text-large">
-            <span className="btn-title">LAPOR KEJADIAN</span>
-            <span className="btn-subtitle">Laporkan hal mencurigakan atau ancaman di sekitar Anda</span>
-          </div>
-        </button>
-      </div>
+      {!canEdit && (
+        <div className="report-action-container">
+          <button className="btn-create-report-large" onClick={() => setIsModalOpen(true)}>
+            <div className="btn-icon-large"><Plus size={32} /></div>
+            <div className="btn-text-large">
+              <span className="btn-title">LAPOR KEJADIAN</span>
+              <span className="btn-subtitle">Laporkan hal mencurigakan atau ancaman di sekitar Anda</span>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* Content Section */}
       <div className="section-title">

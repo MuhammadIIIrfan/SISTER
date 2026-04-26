@@ -1,7 +1,56 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Clock, Shield, MapPin, Building2, CalendarPlus, Edit, X, Save, CheckCircle, AlertTriangle, Loader2, Download } from 'lucide-react';
 import '../styles/piket.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
+
+// --- Helper Functions & Sub-components ---
+
+// Helper function to get initials from a name, matching the original logic.
+const getInitial = (name) => {
+  if (!name || typeof name !== 'string') return '??';
+  const parts = name.trim().split(' ');
+  let initial = '';
+  if (parts.length >= 2) {
+    initial = (parts[0][0] || '') + (parts[1][0] || '');
+  } else if (parts.length === 1 && parts[0].length > 0) {
+    initial = (parts[0][0] || '') + (parts[0][1] || '');
+  }
+  return initial.toUpperCase();
+};
+
+// Helper function to check if a date is today
+const checkIsToday = (isoDate) => {
+  if (!isoDate) return false;
+  const d = new Date(isoDate);
+  const today = new Date();
+  return d.getDate() === today.getDate() &&
+         d.getMonth() === today.getMonth() &&
+         d.getFullYear() === today.getFullYear();
+};
+
+// Component for a single personnel item in a card
+const PersonnelItem = ({ person }) => (
+  <div className="personnel-item">
+    <div className="personnel-avatar">{person.initial}</div>
+    <div className="personnel-info">
+      <span className="personnel-name">{person.name}</span>
+      <span className="personnel-role">{person.rank ? `${person.rank} • ` : ''}{person.role}</span>
+    </div>
+  </div>
+);
+
+// Component for the notification popup
+const NotificationPopup = ({ notification }) => {
+  if (!notification) return null;
+  return (
+    <div className={`notification-popup ${notification.type === 'success' ? 'success' : 'error'}`}>
+      {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
+      <span>{notification.message}</span>
+    </div>
+  );
+};
+
+// --- Main Component ---
 
 export default function Piket() {
   const [activeTab, setActiveTab] = useState('koramil');
@@ -10,21 +59,13 @@ export default function Piket() {
   const [selectedMonthYear, setSelectedMonthYear] = useState(new Date().toISOString().substring(0, 7)); // YYYY-MM format
   // New state for excluded personnel
   const [excludedPersonnelIds, setExcludedPersonnelIds] = useState([]);
+  const [koremPiketPersonelId, setKoremPiketPersonelId] = useState('');
   const [allPersonnelForExclusion, setAllPersonnelForExclusion] = useState([]); // To store all personnel for the dropdown
   const [kodimDatesInput, setKodimDatesInput] = useState('');
   const [koremDatesInput, setKoremDatesInput] = useState('');
 
-  // Mengecek apakah suatu tanggal adalah hari ini
-  const checkIsToday = (isoDate) => {
-    const d = new Date(isoDate);
-    const today = new Date();
-    return d.getDate() === today.getDate() && 
-           d.getMonth() === today.getMonth() && 
-           d.getFullYear() === today.getFullYear();
-  };
-
   // Generator Jadwal Otomatis untuk 30 Hari
-  const generateSchedule = (apiPersonnel = null, excludedIds = [], monthYear = null, kodimDatesStr = '', koremDatesStr = '') => {
+  const generateSchedule = (apiPersonnel = null, excludedIds = [], monthYear = null, kodimDatesStr = '', koremDatesStr = '', koremPiketId = null) => {
     const newSchedules = { koramil: [], kodim: [], korem: [] };
 
     const parseDates = (str) => {
@@ -51,44 +92,30 @@ export default function Piket() {
     let koremPers = null;
 
     // 1. Determine Korem Personnel (Pawas Korem)
-    // This should be chosen from ALL available personnel (excluding Danramil),
-    // regardless of daily piket exclusions.
-    if (apiPersonnel && apiPersonnel.length > 0) {
-        const danramilFilteredPersonnel = apiPersonnel.filter(p => p.jabatan !== 'Danramil');
-        const batuudCandidate = danramilFilteredPersonnel.find(p => p.jabatan === 'Batuud');
-
-        if (batuudCandidate) {
-            const parts = batuudCandidate.nama.trim().split(' ');
-            let initial = '';
-            if (parts.length >= 2) { initial = (parts[0][0] || '') + (parts[1][0] || ''); }
-            else if (parts.length === 1 && parts[0].length > 0) { initial = (parts[0][0] || '') + (parts[0][1] || ''); }
-            koremPers = { name: batuudCandidate.nama, role: batuudCandidate.jabatan, initial: initial.toUpperCase(), rank: batuudCandidate.pangkat };
-        } else if (danramilFilteredPersonnel.length > 0) {
-            // Fallback if no Batuud, pick first available personnel (not Danramil)
-            const firstAvailable = danramilFilteredPersonnel[0];
-            const parts = firstAvailable.nama.trim().split(' ');
-            let initial = '';
-            if (parts.length >= 2) { initial = (parts[0][0] || '') + (parts[1][0] || ''); }
-            else if (parts.length === 1 && parts[0].length > 0) { initial = (parts[0][0] || '') + (parts[0][1] || ''); }
-            koremPers = { name: firstAvailable.nama, role: firstAvailable.jabatan, initial: initial.toUpperCase(), rank: firstAvailable.pangkat };
+    // Determine Korem Personnel (Pawas Korem) based on selection
+    if (apiPersonnel && apiPersonnel.length > 0 && koremPiketId) {
+        const selectedKoremPerson = apiPersonnel.find(p => p.id === koremPiketId);
+        if (selectedKoremPerson) {
+            koremPers = { name: selectedKoremPerson.nama, role: 'Pawas Korem', initial: getInitial(selectedKoremPerson.nama), rank: selectedKoremPerson.pangkat };
         }
     }
-    // Absolute fallback for Korem personnel if no API personnel or no suitable candidate found
+
+    // Fallback if no person is selected or found
     if (!koremPers) {
-        koremPers = { name: 'Mayor Inf Suhendra', role: 'Pawas Korem', initial: 'MS', rank: 'Mayor Inf' };
+        koremPers = { name: 'Belum Ditentukan', role: 'Pawas Korem', initial: '??', rank: '-' };
     }
 
     // 2. Prepare the pool for DAILY piket (respecting exclusions)
     if (apiPersonnel && apiPersonnel.length > 0) {
       const filteredForDailyPiket = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !excludedIds.includes(p.id));
       if (filteredForDailyPiket.length > 0) {
-        pool = filteredForDailyPiket.map(p => {
-          const parts = p.nama.trim().split(' ');
-          let initial = '';
-          if (parts.length >= 2) { initial = (parts[0][0] || '') + (parts[1][0] || ''); }
-          else if (parts.length === 1 && parts[0].length > 0) { initial = (parts[0][0] || '') + (parts[0][1] || ''); }
-          return { name: p.nama, role: p.jabatan, initial: initial.toUpperCase(), id: p.id, rank: p.pangkat };
-        });
+        pool = filteredForDailyPiket.map(p => ({
+          name: p.nama,
+          role: p.jabatan,
+          initial: getInitial(p.nama),
+          id: p.id,
+          rank: p.pangkat
+        }));
       }
     }
 
@@ -225,6 +252,12 @@ export default function Piket() {
             const res = await fetch('http://localhost:5000/api/personel');
             const data = await res.json();
             setAllPersonnelForExclusion(data);
+
+            // Pre-select Batuud for Korem duty if available
+            const batuud = data.find(p => p.jabatan === 'Batuud');
+            if (batuud) {
+                setKoremPiketPersonelId(batuud.id);
+            }
             
             // Generate initial schedule if none saved, using fetched personnel
             if (!localStorage.getItem('piketData')) {
@@ -255,6 +288,14 @@ export default function Piket() {
       const res = await fetch('http://localhost:5000/api/personel');
       const apiPersonnel = await res.json();
       
+      // Validasi: Pastikan personel piket Korem dipilih
+      if (!koremPiketPersonelId) {
+        setNotification({ type: 'error', message: 'Silakan pilih personel untuk piket Korem.' });
+        setIsConfirmModalOpen(false);
+        setIsGenerating(false);
+        return;
+      }
+
       // Validasi: Pastikan ada cukup personel setelah pengecualian
       const availablePersonnelForDailyPiket = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !excludedPersonnelIds.includes(p.id));
       if (availablePersonnelForDailyPiket.length < 2) {
@@ -264,12 +305,17 @@ export default function Piket() {
       }
 
       // Pass excludedPersonnelIds to generateSchedule
-      const newSchedules = generateSchedule(apiPersonnel, excludedPersonnelIds, selectedMonthYear, kodimDatesInput, koremDatesInput);
+      const newSchedules = generateSchedule(apiPersonnel, excludedPersonnelIds, selectedMonthYear, kodimDatesInput, koremDatesInput, koremPiketPersonelId);
       setSchedules(newSchedules); // Update state with new schedules
       localStorage.setItem('piketData', JSON.stringify(newSchedules));
       setIsConfirmModalOpen(false);
       setNotification({ type: 'success', message: 'Jadwal piket berhasil dibuat untuk bulan yang dipilih!' });
       setExcludedPersonnelIds([]); // Reset excluded personnel after generation
+      // Reset Korem selection to default (Batuud)
+      const batuud = apiPersonnel.find(p => p.jabatan === 'Batuud');
+      if (batuud) {
+        setKoremPiketPersonelId(batuud.id);
+      }
     } catch (err) {
       console.error("Gagal fetch personel:", err);
       setIsConfirmModalOpen(false);
@@ -316,14 +362,7 @@ export default function Piket() {
     
     // Otomatis update inisial berdasarkan nama jika nama diubah
     if (field === 'name') {
-       const parts = value.trim().split(' ');
-       let initial = '';
-       if (parts.length >= 2) {
-         initial = (parts[0][0] || '') + (parts[1][0] || '');
-       } else if (parts.length === 1 && parts[0].length > 0) {
-         initial = (parts[0][0] || '') + (parts[0][1] || '');
-       }
-       newPersonnel[index].initial = initial.toUpperCase();
+       newPersonnel[index].initial = getInitial(value);
     }
     setEditFormData(prev => ({ ...prev, personnel: newPersonnel }));
   };
@@ -603,51 +642,59 @@ export default function Piket() {
     }
   };
 
+  // Component for a single schedule card, defined inside to access scope easily
+  const ScheduleCard = ({ item }) => {
+    const isToday = useMemo(() => checkIsToday(item.fullDate), [item.fullDate]);
+    const canEdit = user && user.role === 'danramil';
+
+    return (
+      <div className="schedule-card">
+        <div className="card-header">
+          <div className="date-info">
+            <span className="day-name">{new Date(item.fullDate).toLocaleDateString('id-ID', { weekday: 'long' })}</span>
+            <span className="full-date">{item.date}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className={`status-badge ${item.isMonthly || isToday ? 'status-today' : 'status-upcoming'}`}>
+              {item.isMonthly ? 'BULAN INI' : isToday ? 'HARI INI' : 'AKAN DATANG'}
+            </span>
+            {canEdit && (
+              <button
+                onClick={() => handleEditClick(item)}
+                className="edit-schedule-btn"
+                title="Edit Jadwal"
+              >
+                <Edit size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="personnel-list">
+          {item.personnel.map((person, idx) => (
+            <PersonnelItem key={idx} person={person} />
+          ))}
+        </div>
+
+        <div className="shift-info">
+          <Clock size={16} />
+          <span>{item.shift}</span>
+          {item.location && (
+            <>
+              <span style={{ margin: '0 4px' }}>•</span>
+              <span>{item.location}</span>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="piket-container">
-      <style>{`
-        .modal-overlay {
-          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-          display: flex; align-items: center; justify-content: center; z-index: 1000;
-        }
-        .modal-content {
-          background: white; border-radius: 16px; width: 90%; max-width: 500px;
-          padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .modal-title { margin: 0; font-size: 1.25rem; color: #1e293b; font-weight: 700; }
-        .close-btn { background: none; border: none; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .close-btn:hover { color: #ef4444; }
-        .form-group { margin-bottom: 1rem; }
-        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155; font-size: 0.9rem; }
-        .form-input { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-family: inherit; }
-        .form-input:focus { border-color: #059669; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
-        .btn-cancel { padding: 0.5rem 1rem; border: 1px solid #cbd5e1; background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: #475569; }
-        .btn-cancel:hover { background: #f1f5f9; }
-        .btn-save { padding: 0.5rem 1rem; border: none; background: #059669; color: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
-        .btn-save:hover { background: #047857; }
-        @keyframes slideIn {
-          from { transform: translateY(-20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
 
       {/* Notification Popup */}
-      {notification && (
-        <div style={{
-          position: 'fixed', top: '90px', right: '20px', padding: '1rem 1.5rem',
-          borderRadius: '12px', backgroundColor: notification.type === 'success' ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
-          color: 'white', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '12px', backdropFilter: 'blur(8px)',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', animation: 'slideIn 0.3s ease-out', fontWeight: '500'
-        }}>
-          {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
-          <span>{notification.message}</span>
-        </div>
-      )}
+      <NotificationPopup notification={notification} />
 
       {/* Header */}
       <div className="piket-header">
@@ -719,55 +766,7 @@ export default function Piket() {
       {/* Content Grid */}
       <div className="schedule-grid">
         {getActiveData().length > 0 ? (
-          getActiveData().map((item) => (
-            <div key={item.id} className="schedule-card">
-              <div className="card-header">
-                <div className="date-info">
-                  <span className="day-name">{new Date(item.fullDate).toLocaleDateString('id-ID', { weekday: 'long' })}</span>
-                  <span className="full-date">{item.date}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className={`status-badge ${item.isMonthly ? 'status-today' : checkIsToday(item.fullDate) ? 'status-today' : 'status-upcoming'}`}>
-                    {item.isMonthly ? 'BULAN INI' : checkIsToday(item.fullDate) ? 'HARI INI' : 'AKAN DATANG'}
-                  </span>
-                  {user && user.role === 'danramil' && (
-                    <button 
-                      onClick={() => handleEditClick(item)}
-                      style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#475569', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      title="Edit Jadwal"
-                    >
-                      <Edit size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="personnel-list">
-                {item.personnel.map((person, idx) => (
-                  <div key={idx} className="personnel-item">
-                    <div className="personnel-avatar">
-                      {person.initial}
-                    </div>
-                    <div className="personnel-info">
-                      <span className="personnel-name">{person.name}</span>
-                      <span className="personnel-role">{person.rank ? `${person.rank} • ` : ''}{person.role}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="shift-info">
-                <Clock size={16} />
-                <span>{item.shift}</span>
-                {item.location && (
-                  <>
-                    <span style={{margin: '0 4px'}}>•</span>
-                    <span>{item.location}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          ))
+          getActiveData().map((item) => <ScheduleCard key={item.id} item={item} />)
         ) : (
           <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '16px', color: '#64748b'}}>
             Tidak ada jadwal piket yang tersedia untuk ditampilkan.
@@ -840,85 +839,107 @@ export default function Piket() {
       {/* Modal Konfirmasi Buat Jadwal */}
       {isConfirmModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: '#f59e0b' }}>
-              <AlertTriangle size={48} />
-            </div>
-            <h3 className="modal-title" style={{ marginBottom: '1rem' }}>Konfirmasi Pembuatan Jadwal</h3>
-            <p style={{ color: '#64748b', marginBottom: '1rem', lineHeight: '1.5' }}>
-              Jadwal piket sebelumnya akan ditimpa dan tidak dapat dikembalikan.
-            </p>
-
-            {/* Input Pemilihan Bulan dan Tahun */}
-            <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.8rem' }}>Pilih Bulan & Tahun Jadwal:</label>
-                <input
-                    type="month"
-                    className="form-input"
-                    value={selectedMonthYear}
-                    onChange={(e) => setSelectedMonthYear(e.target.value)}
-                    style={{ width: '100%', textAlign: 'center', fontSize: '1.1rem', padding: '10px' }}
-                    required
-                />
+          <div className="modal-content" style={{ maxWidth: '700px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ display: 'inline-flex', justifyContent: 'center', marginBottom: '1rem', color: '#f59e0b', background: '#fffbeb', padding: '12px', borderRadius: '50%' }}>
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="modal-title" style={{ marginBottom: '0.5rem' }}>Konfirmasi Pembuatan Jadwal</h3>
+              <p style={{ color: '#64748b', marginBottom: '2rem', lineHeight: '1.5', maxWidth: '450px', margin: '0 auto 2rem auto' }}>
+                Jadwal piket sebelumnya akan ditimpa. Pastikan semua konfigurasi sudah benar sebelum melanjutkan.
+              </p>
             </div>
 
-            {/* Input Tanggal Piket Kodim */}
-            <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
-                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.5rem' }}>Tanggal Piket Kodim (pisahkan koma, cth: 5,12,20):</label>
-                <input
-                    type="text"
-                    className="form-input"
-                    value={kodimDatesInput}
-                    onChange={(e) => setKodimDatesInput(e.target.value)}
-                    placeholder="Kosongkan jika tidak ada"
-                    style={{ textAlign: 'center' }}
-                />
-            </div>
+            <div className="config-sections-wrapper">
+                {/* Left Section: Dates */}
+                <div className="config-section">
+                    <div className="form-group">
+                        <label className="form-label">Pilih Bulan & Tahun Jadwal</label>
+                        <input
+                            type="month"
+                            className="form-input"
+                            value={selectedMonthYear}
+                            onChange={(e) => setSelectedMonthYear(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Tanggal Piket Kodim</label>
+                        <input
+                            type="text"
+                            className="form-input"
+                            value={kodimDatesInput}
+                            onChange={(e) => setKodimDatesInput(e.target.value)}
+                            placeholder="Cth: 5, 15, 25"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Tanggal Piket Korem</label>
+                        <input
+                            type="text"
+                            className="form-input"
+                            value={koremDatesInput}
+                            onChange={(e) => setKoremDatesInput(e.target.value)}
+                            placeholder="Cth: 10, 20"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Personel Piket Korem (Pawas)</label>
+                        <select
+                            className="form-input"
+                            value={koremPiketPersonelId}
+                            onChange={(e) => setKoremPiketPersonelId(e.target.value)}
+                            required
+                        >
+                            <option value="" disabled>-- Pilih Personel --</option>
+                            {allPersonnelForExclusion
+                                .filter(p => p.jabatan !== 'Danramil')
+                                .map(person => (
+                                    <option key={person.id} value={person.id}>
+                                        {person.nama} ({person.jabatan})
+                                    </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
 
-            {/* Input Tanggal Piket Korem */}
-            <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
-                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.5rem' }}>Tanggal Piket Korem (pisahkan koma, cth: 10,24):</label>
-                <input
-                    type="text"
-                    className="form-input"
-                    value={koremDatesInput}
-                    onChange={(e) => setKoremDatesInput(e.target.value)}
-                    placeholder="Kosongkan jika tidak ada"
-                    style={{ textAlign: 'center' }}
-                />
-            </div>
-
-            {/* Section for excluding personnel */}
-            <div style={{ textAlign: 'left', marginTop: '1rem', marginBottom: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '0.8rem' }}>Kecualikan Personel dari Piket Harian:</label>
-                <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.5rem' }}>
-                    {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
-                        <div key={person.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <input
-                                type="checkbox"
-                                id={`exclude-${person.id}`}
-                                value={person.id}
-                                checked={excludedPersonnelIds.includes(person.id)}
-                                onChange={(e) => {
-                                    const personId = person.id; // Ensure person.id is used
-                                    if (e.target.checked) {
-                                        setExcludedPersonnelIds(prev => [...prev, personId]);
-                                    } else {
-                                        setExcludedPersonnelIds(prev => prev.filter(id => id !== personId));
-                                    }
-                                }}
-                                style={{ marginRight: '0.5rem' }}
-                            />
-                            <label htmlFor={`exclude-${person.id}`} style={{ fontSize: '0.9rem', color: '#334155' }}>{person.nama} ({person.jabatan})</label>
-                        </div>
-                    ))}
-                    {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length === 0 && (
-                        <p style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>Tidak ada personel yang tersedia untuk dikecualikan.</p>
-                    )}
+                {/* Right Section: Exclusions */}
+                <div className="config-section">
+                    <label className="form-label">Kecualikan Personel dari Piket Harian</label>
+                    <div className="exclusion-grid-container">
+                        {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length > 0 ? (
+                            allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
+                                <div key={person.id} className="exclusion-item">
+                                    <input
+                                        type="checkbox"
+                                        id={`exclude-${person.id}`}
+                                        className="exclusion-checkbox"
+                                        checked={excludedPersonnelIds.includes(person.id)}
+                                        onChange={(e) => {
+                                            const personId = person.id;
+                                            if (e.target.checked) {
+                                                setExcludedPersonnelIds(prev => [...prev, personId]);
+                                            } else {
+                                                setExcludedPersonnelIds(prev => prev.filter(id => id !== personId));
+                                            }
+                                        }}
+                                    />
+                                    <label htmlFor={`exclude-${person.id}`} className="exclusion-label">
+                                        <span className="exclusion-name">{person.nama}</span>
+                                        <span className="exclusion-role">{person.jabatan}</span>
+                                    </label>
+                                </div>
+                            ))
+                        ) : (
+                            <p style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', gridColumn: '1 / -1' }}>
+                                Tidak ada personel yang tersedia untuk dikecualikan.
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            <div className="modal-actions" style={{ justifyContent: 'center' }}>
+            <div className="modal-actions" style={{ justifyContent: 'center', marginTop: '2rem' }}>
               <button type="button" className="btn-cancel" onClick={() => setIsConfirmModalOpen(false)} disabled={isGenerating}>Batal</button>
               <button type="button" className="btn-save" onClick={executeCreateSchedule} disabled={isGenerating} style={{ opacity: isGenerating ? 0.7 : 1 }}>
                 {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <CalendarPlus size={18} />} 
