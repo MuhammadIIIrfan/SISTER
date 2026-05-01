@@ -1,6 +1,6 @@
 import { Map, Layers, Info, MapPin, Users, X, Filter, Shield, AlertTriangle, Navigation, List } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import '../styles/peta-spasial.css';
@@ -184,11 +184,20 @@ export default function PetaSpasial() {
           {/* OpenStreetMap via React-Leaflet */}
           <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%', zIndex: 0 }}>
             <MapController center={mapCenter} zoom={mapZoom} />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            
+            <LayersControl position="topright">
+              <LayersControl.BaseLayer checked name="Peta Standar">
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Citra Satelit">
+                <TileLayer
+                  attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                />
+              </LayersControl.BaseLayer>
+            </LayersControl>
             {/* Render Marker pada Peta */}
             {filteredMarkers.map((marker) => (
               <Marker 

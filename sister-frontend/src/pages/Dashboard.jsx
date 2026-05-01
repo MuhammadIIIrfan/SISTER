@@ -1,13 +1,26 @@
-import { Phone, Mail, BookOpen, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Phone, Mail, BookOpen, Heart, Clock, MapPin, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/dashboard.css';
 import logoAsset from '../assets/LOGO_KOREM_043.png';
 import backgroundAsset from '../assets/koramil09.jpg';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const [latestReports, setLatestReports] = useState([]);
+
   const koramil = {
     phone: '(021) 123-4567',
     email: 'koramil429-09@mil.id'
   };
+
+  useEffect(() => {
+    // Fetch 3 laporan terbaru dari backend
+    fetch('http://localhost:5000/api/reports?limit=3')
+      .then(res => res.json())
+      .then(data => setLatestReports(data))
+      .catch(err => console.error("Gagal mengambil laporan:", err));
+  }, []);
 
   return (
     <div className="dashboard-container">
@@ -57,6 +70,55 @@ export default function Dashboard() {
           <p className="mv-description">
             Menjadi institusi militer modern yang profesional, terpercaya, dan berdedikasi dalam melayani masyarakat dan negara dengan integritas tinggi.
           </p>
+        </div>
+      </div>
+
+      {/* Section Laporan Giat Babinsa */}
+      <div className="dashboard-section">
+        <div className="section-header">
+          <div>
+            <h2>Laporan Giat Babinsa Terkini</h2>
+            <p>Update kegiatan terbaru dari lapangan</p>
+          </div>
+          <button onClick={() => navigate('/reports')}>
+            Lihat Semua <ArrowRight size={18} />
+          </button>
+        </div>
+
+        <div className="latest-reports-grid">
+          {latestReports.length > 0 ? (
+            latestReports.map(report => (
+              <div key={report.id} className="report-card-mini" onClick={() => navigate('/reports')}>
+                <div className="report-image-wrapper">
+                  {report.image ? (
+                    <img src={report.image} alt={report.title} />
+                  ) : (
+                    <div className="no-image-placeholder">
+                      <ImageIcon size={48} />
+                      <span>Tidak ada foto</span>
+                    </div>
+                  )}
+                  <span className="report-category-badge">
+                    {report.category}
+                  </span>
+                </div>
+                <div className="report-content-wrapper">
+                  <div className="report-meta-info">
+                    <span><Clock size={14}/> {report.date}</span>
+                    <span><MapPin size={14}/> {report.location}</span>
+                  </div>
+                  <h3 className="report-title-mini">{report.title}</h3>
+                  <p className="report-desc-mini">
+                    {report.description}
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: '#cbd5e1', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+              Belum ada laporan kegiatan untuk ditampilkan.
+            </div>
+          )}
         </div>
       </div>
     </div>

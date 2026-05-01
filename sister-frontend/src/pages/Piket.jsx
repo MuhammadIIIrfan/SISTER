@@ -58,14 +58,52 @@ export default function Piket() {
 
   const [selectedMonthYear, setSelectedMonthYear] = useState(new Date().toISOString().substring(0, 7)); // YYYY-MM format
   // New state for excluded personnel
-  const [excludedPersonnelIds, setExcludedPersonnelIds] = useState([]);
+  const [excludedPersonnelIds, setExcludedPersonnelIds] = useState({ koramil: [], kodim: [] });
   const [koremPiketPersonelId, setKoremPiketPersonelId] = useState('');
+  const [selectedSummaryPersonId, setSelectedSummaryPersonId] = useState('');
   const [allPersonnelForExclusion, setAllPersonnelForExclusion] = useState([]); // To store all personnel for the dropdown
   const [kodimDatesInput, setKodimDatesInput] = useState('');
   const [koremDatesInput, setKoremDatesInput] = useState('');
+  const getDefaultPatroliState = () => ({
+    monthYear: new Date().toISOString().substring(0, 7),
+    reguDetails: [
+      { name: 'Regu 1', personnel: '' },
+      { name: 'Regu 2', personnel: '' },
+      { name: 'Regu 3', personnel: '' },
+      { name: 'Regu 4', personnel: '' }
+    ],
+    schedule: []
+  });
+
+  const parsePatroliData = () => {
+    const saved = localStorage.getItem('patroliData');
+    if (!saved) return getDefaultPatroliState();
+
+    try {
+      const parsed = JSON.parse(saved);
+      if (!parsed || typeof parsed !== 'object') {
+        localStorage.removeItem('patroliData');
+        return getDefaultPatroliState();
+      }
+
+      return {
+        monthYear: parsed.monthYear || new Date().toISOString().substring(0, 7),
+        reguDetails: Array.isArray(parsed.reguDetails) ? parsed.reguDetails : getDefaultPatroliState().reguDetails,
+        schedule: Array.isArray(parsed.schedule) ? parsed.schedule : []
+      };
+    } catch (err) {
+      console.warn('Failed to parse patrol data from localStorage:', err);
+      localStorage.removeItem('patroliData');
+      return getDefaultPatroliState();
+    }
+  };
+
+  const [patroliMonthYear, setPatroliMonthYear] = useState(() => parsePatroliData().monthYear);
+  const [patroliReguDetails, setPatroliReguDetails] = useState(() => parsePatroliData().reguDetails);
+  const [patroliScheduleData, setPatroliScheduleData] = useState(() => parsePatroliData());
 
   // Generator Jadwal Otomatis untuk 30 Hari
-  const generateSchedule = (apiPersonnel = null, excludedIds = [], monthYear = null, kodimDatesStr = '', koremDatesStr = '', koremPiketId = null) => {
+  const generateSchedule = (apiPersonnel = null, excludedIds = { koramil: [], kodim: [] }, monthYear = null, kodimDatesStr = '', koremDatesStr = '', koremPiketId = null) => {
     const newSchedules = { koramil: [], kodim: [], korem: [] };
 
     const parseDates = (str) => {
@@ -88,13 +126,14 @@ export default function Piket() {
     
     const startDate = new Date(year, month, 1);
 
-    let pool = [];
     let koremPers = null;
+    let koramilPool = [], kodimPool = [];
 
     // 1. Determine Korem Personnel (Pawas Korem)
     // Determine Korem Personnel (Pawas Korem) based on selection
     if (apiPersonnel && apiPersonnel.length > 0 && koremPiketId) {
-        const selectedKoremPerson = apiPersonnel.find(p => p.id === koremPiketId);
+        // Use '==' for loose comparison because koremPiketId from <select> is a string, while p.id is a number.
+        const selectedKoremPerson = apiPersonnel.find(p => p.id == koremPiketId);
         if (selectedKoremPerson) {
             koremPers = { name: selectedKoremPerson.nama, role: 'Pawas Korem', initial: getInitial(selectedKoremPerson.nama), rank: selectedKoremPerson.pangkat };
         }
@@ -105,30 +144,31 @@ export default function Piket() {
         koremPers = { name: 'Belum Ditentukan', role: 'Pawas Korem', initial: '??', rank: '-' };
     }
 
-    // 2. Prepare the pool for DAILY piket (respecting exclusions)
+    // 2. Prepare the pools for piket (respecting exclusions)
     if (apiPersonnel && apiPersonnel.length > 0) {
-      const filteredForDailyPiket = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !excludedIds.includes(p.id));
-      if (filteredForDailyPiket.length > 0) {
-        pool = filteredForDailyPiket.map(p => ({
+      const createPool = (excludeList) => apiPersonnel
+        .filter(p => p.jabatan !== 'Danramil' && !excludeList.includes(p.id))
+        .map(p => ({
           name: p.nama,
           role: p.jabatan,
           initial: getInitial(p.nama),
           id: p.id,
           rank: p.pangkat
         }));
-      }
+      
+      koramilPool = createPool(excludedIds.koramil || []);
+      kodimPool = createPool(excludedIds.kodim || []);
     }
 
-    // 3. Fallback for daily piket pool if it's empty after filtering/exclusion
-    if (pool.length === 0) {
+    // 3. Fallback for pools if they are empty after filtering/exclusion
+    if (koramilPool.length === 0) {
       const defaultKoramil = [
         { name: 'Serka Dedi Mulyadi', role: 'Ba Jaga', initial: 'DM', rank: 'Serka' },
         { name: 'Kopda Rian Saputra', role: 'Ta Jaga', initial: 'RS', rank: 'Kopda' },
-        { name: 'Sertu Agus Pratama', role: 'Ba Jaga', initial: 'AP', rank: 'Sertu' },
-        { name: 'Praka Dimas', role: 'Ta Jaga', initial: 'PD', rank: 'Praka' },
-        { name: 'Serda Tono', role: 'Ba Jaga', initial: 'ST', rank: 'Serda' },
-        { name: 'Kopka Yudi', role: 'Ta Jaga', initial: 'KY', rank: 'Kopka' }
       ];
+      koramilPool = [...defaultKoramil];
+    }
+    if (kodimPool.length === 0) {
       const defaultKodim = [
         { name: 'Peltu Budi Santoso', role: 'Pa Jaga', initial: 'BS', rank: 'Peltu' },
         { name: 'Serma Hendra', role: 'Ba Jaga', initial: 'SH', rank: 'Serma' },
@@ -137,7 +177,7 @@ export default function Piket() {
         { name: 'Sertu Bowo', role: 'Ba Jaga', initial: 'SB', rank: 'Sertu' },
         { name: 'Praka Eko', role: 'Ta Jaga', initial: 'PE', rank: 'Praka' }
       ];
-      pool = [...defaultKoramil, ...defaultKodim];
+      kodimPool = [...defaultKodim];
     }
 
     // Generate Jadwal Korem (hanya pada tanggal spesifik yang dipilih)
@@ -158,73 +198,223 @@ export default function Piket() {
     // Urutkan jadwal korem berdasarkan tanggal
     newSchedules.korem.sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
 
-    const numberOfDaysInMonth = new Date(year, month + 1, 0).getDate(); // Get number of days in the selected month
-    // Algoritma Greedy: Lacak jumlah shift setiap personel untuk memastikan pembagian adil
+    // Seedable pseudo-random number generator (LCG) for deterministic shuffling
+    // This ensures that for a given month/year, the shuffle order is always the same.
+    function mulberry32(seed) {
+        return function() {
+            seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+            var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+    }
+
+    const numberOfDaysInMonth = new Date(year, month + 1, 0).getDate();
+    // Algoritma yang disempurnakan:
+    // - Menggunakan satu 'shiftCounts' untuk keadilan menyeluruh.
+    // - Melacak hari piket terakhir untuk setiap personel.
+    // - Menghindari konflik pada hari yang sama.
+    // - Menerapkan waktu istirahat minimal 2 hari.
+    const useIdAsKey = koramilPool.every(p => p.id) && kodimPool.every(p => p.id);
+    const getKey = (person) => useIdAsKey ? person.id : person.name;
+
     const shiftCounts = {};
-    pool.forEach(p => { shiftCounts[p.name] = 0; });
+    const kodimShiftCounts = {};
+    const lastPiketDay = {};
+
+    // Inisialisasi data pelacakan untuk semua personel yang mungkin bertugas
+    const allAvailablePersonnel = [...new Map([...koramilPool, ...kodimPool].map(item => [getKey(item), item])).values()];
+
+    // --- LOGIKA BARU: Buat urutan acak yang berbeda setiap kali generate untuk fleksibilitas ---
+    // Ini memastikan urutan acak yang berbeda setiap kali jadwal dibuat ulang, bahkan untuk bulan yang sama.
+    // 1. Buat seed unik untuk bulan, tahun, dan waktu generate ini
+    const seed = year * 100 + month + Math.floor(Math.random() * 1000000);
+    const random = mulberry32(seed);
+
+    // 2. Lakukan Fisher-Yates shuffle pada daftar personel untuk mendapatkan urutan acak yang deterministik
+    const shuffledPersonnel = [...allAvailablePersonnel];
+    for (let k = shuffledPersonnel.length - 1; k > 0; k--) {
+        const j = Math.floor(random() * (k + 1));
+        [shuffledPersonnel[k], shuffledPersonnel[j]] = [shuffledPersonnel[j], shuffledPersonnel[k]];
+    }
+
+    // 3. Buat Map untuk lookup urutan tie-breaker dengan cepat dari daftar yang sudah diacak
+    const tieBreakerMap = new Map(shuffledPersonnel.map((p, index) => [getKey(p), index]));
+    // --- AKHIR LOGIKA BARU ---
+
+    // Inisialisasi data pelacakan untuk semua personel yang mungkin bertugas
+    shuffledPersonnel.forEach(p => { // Gunakan daftar yang sudah diacak untuk inisialisasi
+        const key = getKey(p);
+        shiftCounts[key] = 0;
+        kodimShiftCounts[key] = 0; // Tambahkan pelacakan khusus untuk piket Kodim
+        lastPiketDay[key] = -99; // Inisialisasi dengan nilai rendah agar bisa langsung dapat jadwal
+    });
+    
+    // Define a single sorting function that prioritizes:
+    // 1. Fewer shifts (ascending)
+    // 2. More rest days (longer gap since last piket, descending)
+    // 3. Monthly pseudo-random tie-breaker (ascending)
+    const sortPersonnelByPriority = (a, b, currentDay) => {
+        const keyA = getKey(a);
+        const keyB = getKey(b);
+
+        // Priority 1: Fewer shifts
+        const shiftDiff = shiftCounts[keyA] - shiftCounts[keyB];
+        if (shiftDiff !== 0) return shiftDiff;
+
+        // Priority 2: More rest days (longer gap since last piket)
+        const restDiff = (currentDay - lastPiketDay[keyB]) - (currentDay - lastPiketDay[keyA]);
+        if (restDiff !== 0) return restDiff;
+
+        // Priority 3: Monthly pseudo-random tie-breaker
+        return tieBreakerMap.get(keyA) - tieBreakerMap.get(keyB);
+    };
+
+    // New sorting function specifically for Kodim, incorporating the max 2 shifts rule
+    const sortKodimPersonnel = (a, b, currentDay) => {
+        const keyA = getKey(a);
+        const keyB = getKey(b);
+
+        // Primary Priority for Kodim: Fewer Kodim shifts (max 2)
+        // This ensures those with 0 or 1 shifts are prioritized over those with 2 or more.
+        const kodimShiftDiff = kodimShiftCounts[keyA] - kodimShiftCounts[keyB];
+        if (kodimShiftDiff !== 0) return kodimShiftDiff;
+
+        // Secondary Priority: More rest days (longer gap since last piket)
+        const restDiff = (currentDay - lastPiketDay[keyB]) - (currentDay - lastPiketDay[keyA]);
+        if (restDiff !== 0) return restDiff;
+
+        // Tertiary Priority: Fewer total shifts (as a tie-breaker for rest days)
+        const shiftDiff = shiftCounts[keyA] - shiftCounts[keyB];
+        if (shiftDiff !== 0) return shiftDiff;
+
+        // Quaternary Priority: Monthly pseudo-random tie-breaker
+        return tieBreakerMap.get(keyA) - tieBreakerMap.get(keyB);
+    };
+
 
     for (let i = 0; i < numberOfDaysInMonth; i++) {
       const currentDay = i + 1;
-      const date = new Date(year, month, currentDay); // Start from 1st of the month
+      const date = new Date(year, month, currentDay);
       const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       const dayStr = date.toLocaleDateString('id-ID', { weekday: 'long' });
       const fullDate = date.toISOString();
 
-      // Handle case where pool might be empty after exclusion
-      if (pool.length === 0) {
-          newSchedules.koramil.push({
-              id: `koramil-${i}`,
-              day: dayStr,
-              date: dateStr,
-              fullDate: fullDate,
-              shift: '08:00 - 08:00 (24 Jam)',
-              personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }]
-          });
-          // Tetap pastikan Kodim dicek walau kosong
-          if (kodimDays.includes(currentDay)) {
-              newSchedules.kodim.push({
-                  id: `kodim-${i}`,
+      let personsOnKodimDutyTodayKeys = [];
+
+      // Prioritaskan penjadwalan Kodim (1 orang per hari)
+      if (kodimDays.includes(currentDay)) {
+        if (kodimPool.length > 0) {
+            let kodimPerson = null;
+
+            // Sort all Kodim candidates using the Kodim-specific sorting logic
+            // This will naturally prioritize those with < 2 shifts, then rest days, etc.
+            let candidates = [...kodimPool];
+            candidates.sort((a, b) => sortKodimPersonnel(a, b, currentDay));
+            
+            // Find the first candidate who has less than 2 Kodim shifts
+            kodimPerson = candidates.find(person => kodimShiftCounts[getKey(person)] < 2);
+
+
+            if (kodimPerson) {
+                newSchedules.kodim.push({
+                    id: `kodim-${i}`,
+                    day: dayStr,
+                    date: dateStr,
+                    fullDate: fullDate,
+                    shift: '08:00 - 08:00 (24 Jam)',
+                    personnel: [kodimPerson] // Hanya satu personel
+                });
+                // Update data untuk setiap personel yang ditugaskan
+                const key = getKey(kodimPerson);
+                shiftCounts[key]++;
+                kodimShiftCounts[key]++; // Increment Kodim-specific count
+                lastPiketDay[key] = currentDay;
+                personsOnKodimDutyTodayKeys.push(key); // Ini akan berisi hanya satu kunci
+            } else {
+                // Fallback jika tidak ada personel yang tersedia (semua sudah 2 kali piket Kodim)
+                newSchedules.kodim.push({ id: `kodim-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel Tersedia', role: 'Kosong', initial: 'NA', rank: '-' }] });
+            }
+        } else {
+            // Fallback jika pool kodim kosong
+            newSchedules.kodim.push({ id: `kodim-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }] });
+        }
+      }
+
+      // Jadwalkan Piket Koramil
+      if (koramilPool.length > 0) {
+          let koramilPerson = null;
+
+          // Attempt 1: Find candidates satisfying strict 3-day rest AND not on Kodim duty
+          let strictKoramilCandidates = koramilPool.filter(p => 
+              !personsOnKodimDutyTodayKeys.includes(getKey(p)) && 
+              currentDay - lastPiketDay[getKey(p)] > 3
+          );
+          strictKoramilCandidates.sort((a, b) => sortPersonnelByPriority(a, b, currentDay));
+
+          if (strictKoramilCandidates.length > 0) {
+              koramilPerson = strictKoramilCandidates[0];
+          } else {
+              // Attempt 2: If no one satisfies strict rest, pick from all available (not on Kodim duty),
+              // prioritizing fewest shifts and then longest rest, even if < 3 days.
+              let allKoramilCandidates = koramilPool.filter(p => !personsOnKodimDutyTodayKeys.includes(getKey(p)));
+              allKoramilCandidates.sort((a, b) => sortPersonnelByPriority(a, b, currentDay));
+              koramilPerson = allKoramilCandidates[0];
+          }
+
+          if (koramilPerson) {
+              const key = getKey(koramilPerson);
+              newSchedules.koramil.push({
+                  id: `koramil-${i}`,
                   day: dayStr,
                   date: dateStr,
                   fullDate: fullDate,
                   shift: '08:00 - 08:00 (24 Jam)',
-                  personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }]
+                  personnel: [koramilPerson]
               });
+              shiftCounts[key]++;
+              lastPiketDay[key] = currentDay;
+          } else {
+              // Fallback jika tidak ada personel yang bisa ditugaskan (misal, semua orang sedang piket Kodim)
+              newSchedules.koramil.push({ id: `koramil-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Konflik Jadwal', role: 'Kosong', initial: '!!', rank: '-' }] });
           }
-          continue; // Skip to next day
-      }
-
-      // Greedy Choice untuk Koramil
-      pool.sort((a, b) => (shiftCounts[a.name] - shiftCounts[b.name]) || a.name.localeCompare(b.name));
-      const personKoramil = pool[0];
-      shiftCounts[personKoramil.name]++;
-
-      newSchedules.koramil.push({
-        id: `koramil-${i}`,
-        day: dayStr,
-        date: dateStr,
-        fullDate: fullDate,
-        shift: '08:00 - 08:00 (24 Jam)',
-        personnel: [personKoramil]
-      });
-
-      // Jika hari ini ada jadwal Kodim
-      if (kodimDays.includes(currentDay)) {
-        pool.sort((a, b) => (shiftCounts[a.name] - shiftCounts[b.name]) || a.name.localeCompare(b.name));
-        const personKodim = pool[0];
-        shiftCounts[personKodim.name]++;
-
-        newSchedules.kodim.push({
-          id: `kodim-${i}`,
-          day: dayStr,
-          date: dateStr,
-          fullDate: fullDate,
-          shift: '08:00 - 08:00 (24 Jam)',
-          personnel: [personKodim]
-        });
+      } else {
+          // Fallback jika pool koramil kosong
+          newSchedules.koramil.push({ id: `koramil-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }] });
       }
     }
     return newSchedules;
+  };
+
+  const generatePatroliSchedule = (monthYear, reguDetails) => {
+    const [year, month] = monthYear.split('-').map((value) => parseInt(value, 10));
+    const patrolDates = [];
+    const date = new Date(year, month - 1, 1);
+
+    while (date.getMonth() === month - 1) {
+      if (date.getDay() === 6) {
+        patrolDates.push(new Date(date));
+      }
+      date.setDate(date.getDate() + 1);
+    }
+
+    return patrolDates.map((d, idx) => {
+      const regu = reguDetails[idx % reguDetails.length] || { name: `Regu ${idx + 1}`, personnel: '' };
+      return {
+        id: `patroli-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`,
+        day: d.toLocaleDateString('id-ID', { weekday: 'long' }),
+        date: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        fullDate: d.toISOString(),
+        shift: 'Patroli Sabtu',
+        location: 'Patroli Sabtu',
+        personnel: [{
+          name: regu.name,
+          role: regu.personnel || 'Belum ada personel',
+          initial: regu.name ? regu.name.split(' ').map((s) => s[0]).join('').toUpperCase().slice(0, 2) : 'P',
+          rank: ''
+        }]
+      };
+    });
   };
 
   // Mengambil state jadwal dari localStorage, atau render default jika kosong
@@ -262,9 +452,28 @@ export default function Piket() {
             // Generate initial schedule if none saved, using fetched personnel
             if (!localStorage.getItem('piketData')) {
                 const currentMonthYear = new Date().toISOString().substring(0, 7);
-                const initialSchedules = generateSchedule(data, [], currentMonthYear, '5, 15, 25', '10, 20');
+                const initialSchedules = generateSchedule(data, { koramil: [], kodim: [] }, currentMonthYear, '5, 15, 25', '10, 20', batuud ? batuud.id : null);
                 setSchedules(initialSchedules);
                 localStorage.setItem('piketData', JSON.stringify(initialSchedules));
+            }
+            if (!localStorage.getItem('patroliData')) {
+                const patrolDefault = {
+                    monthYear: new Date().toISOString().substring(0, 7),
+                    reguDetails: [
+                      { name: 'Regu 1', personnel: '' },
+                      { name: 'Regu 2', personnel: '' },
+                      { name: 'Regu 3', personnel: '' },
+                      { name: 'Regu 4', personnel: '' }
+                    ],
+                    schedule: generatePatroliSchedule(new Date().toISOString().substring(0, 7), [
+                      { name: 'Regu 1', personnel: '' },
+                      { name: 'Regu 2', personnel: '' },
+                      { name: 'Regu 3', personnel: '' },
+                      { name: 'Regu 4', personnel: '' }
+                    ])
+                };
+                setPatroliScheduleData(patrolDefault);
+                localStorage.setItem('patroliData', JSON.stringify(patrolDefault));
             }
         }
         catch (err) {
@@ -272,9 +481,28 @@ export default function Piket() {
             // If fetching personnel fails, still try to generate with default data
             if (!localStorage.getItem('piketData')) {
                 const currentMonthYear = new Date().toISOString().substring(0, 7);
-                const initialSchedules = generateSchedule(null, [], currentMonthYear, '5, 15, 25', '10, 20'); // Pass null for apiPersonnel
+                const initialSchedules = generateSchedule(null, { koramil: [], kodim: [] }, currentMonthYear, '5, 15, 25', '10, 20', null); // Pass null for apiPersonnel
                 setSchedules(initialSchedules);
                 localStorage.setItem('piketData', JSON.stringify(initialSchedules));
+            }
+            if (!localStorage.getItem('patroliData')) {
+                const patrolDefault = {
+                    monthYear: new Date().toISOString().substring(0, 7),
+                    reguDetails: [
+                      { name: 'Regu 1', personnel: '' },
+                      { name: 'Regu 2', personnel: '' },
+                      { name: 'Regu 3', personnel: '' },
+                      { name: 'Regu 4', personnel: '' }
+                    ],
+                    schedule: generatePatroliSchedule(new Date().toISOString().substring(0, 7), [
+                      { name: 'Regu 1', personnel: '' },
+                      { name: 'Regu 2', personnel: '' },
+                      { name: 'Regu 3', personnel: '' },
+                      { name: 'Regu 4', personnel: '' }
+                    ])
+                };
+                setPatroliScheduleData(patrolDefault);
+                localStorage.setItem('patroliData', JSON.stringify(patrolDefault));
             }
         }
     };
@@ -297,11 +525,19 @@ export default function Piket() {
       }
 
       // Validasi: Pastikan ada cukup personel setelah pengecualian
-      const availablePersonnelForDailyPiket = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !excludedPersonnelIds.includes(p.id));
-      if (availablePersonnelForDailyPiket.length < 2) {
-        setNotification({ type: 'error', message: 'Minimal 2 personel harus tersedia untuk piket harian setelah pengecualian.' });
+      const availableForKoramil = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !(excludedPersonnelIds.koramil || []).includes(p.id));
+      if (availableForKoramil.length < 1) {
+        setNotification({ type: 'error', message: 'Minimal 1 personel harus tersedia untuk piket Koramil.' });
         setIsConfirmModalOpen(false);
-        return; // Hentikan proses generate
+        setIsGenerating(false);
+        return;
+      }
+      const availableForKodim = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !(excludedPersonnelIds.kodim || []).includes(p.id));
+      if (kodimDatesInput && availableForKodim.length < 1) {
+        setNotification({ type: 'error', message: 'Minimal 1 personel harus tersedia untuk piket Kodim jika tanggal ditentukan.' });
+        setIsConfirmModalOpen(false);
+        setIsGenerating(false);
+        return;
       }
 
       // Pass excludedPersonnelIds to generateSchedule
@@ -310,7 +546,7 @@ export default function Piket() {
       localStorage.setItem('piketData', JSON.stringify(newSchedules));
       setIsConfirmModalOpen(false);
       setNotification({ type: 'success', message: 'Jadwal piket berhasil dibuat untuk bulan yang dipilih!' });
-      setExcludedPersonnelIds([]); // Reset excluded personnel after generation
+      setExcludedPersonnelIds({ koramil: [], kodim: [] }); // Reset excluded personnel after generation
       // Reset Korem selection to default (Batuud)
       const batuud = apiPersonnel.find(p => p.jabatan === 'Batuud');
       if (batuud) {
@@ -325,9 +561,43 @@ export default function Piket() {
     }
   };
 
+  const executeCreatePatroliSchedule = () => {
+    const newSchedule = generatePatroliSchedule(patroliMonthYear, patroliReguDetails);
+    const newPatroliData = {
+      monthYear: patroliMonthYear,
+      reguDetails: [...patroliReguDetails],
+      schedule: newSchedule
+    };
+    setPatroliScheduleData(newPatroliData);
+    localStorage.setItem('patroliData', JSON.stringify(newPatroliData));
+    setNotification({ type: 'success', message: 'Jadwal patroli Sabtu berhasil dibuat.' });
+  };
+
   // State untuk form edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
+
+  const selectedSummaryPerson = useMemo(() => {
+    if (!selectedSummaryPersonId) return null;
+    return allPersonnelForExclusion.find((person) => person.id == selectedSummaryPersonId) || null;
+  }, [selectedSummaryPersonId, allPersonnelForExclusion]);
+
+  const scheduleSummary = useMemo(() => {
+    if (!selectedSummaryPerson) return null;
+
+    const matchesSelectedPerson = (person) => {
+      if (person.id != null) {
+        return person.id == selectedSummaryPerson.id;
+      }
+      return person.name === selectedSummaryPerson.nama;
+    };
+
+    return {
+      koramil: (schedules.koramil || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => item.date),
+      kodim: (schedules.kodim || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => item.date),
+      korem: (schedules.korem || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => item.date),
+    };
+  }, [selectedSummaryPerson, schedules]);
 
   const handleEditClick = (item) => {
     // Buat deep copy dari array personnel agar tidak merubah state utama secara langsung
@@ -368,8 +638,8 @@ export default function Piket() {
   };
 
   const getActiveData = () => {
-    let data = schedules[activeTab] || [];
-    if (!user) {
+    let data = activeTab === 'patroli' ? (patroliScheduleData.schedule || []) : (schedules[activeTab] || []);
+    if (!user && activeTab !== 'patroli') {
       // Masyarakat umum (belum login) HANYA bisa melihat jadwal piket HARI INI (atau jadwal bulanan)
       data = data.filter(item => item.isMonthly || checkIsToday(item.fullDate));
     }
@@ -378,7 +648,7 @@ export default function Piket() {
 
   const handleExportSchedule = () => {
     const dataToExport = getActiveData();
-    const tabTitle = activeTab === 'koramil' ? 'Piket Koramil' : activeTab === 'kodim' ? 'Piket Kodim' : 'Piket Korem';
+    const tabTitle = activeTab === 'koramil' ? 'Piket Koramil' : activeTab === 'kodim' ? 'Piket Kodim' : activeTab === 'korem' ? 'Piket Korem' : 'Piket Patroli';
     const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
     // Ambil data Batuud untuk tanda tangan
@@ -550,6 +820,53 @@ export default function Piket() {
               .signature-space {
                   height: 90px;
               }
+              .summary-section {
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                  gap: 1rem;
+                  margin-top: 1rem;
+              }
+              .summary-card {
+                  background: #ffffff;
+                  border: 1px solid #d1e8dd;
+                  border-radius: 16px;
+                  padding: 1rem;
+                  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+              }
+              .summary-card h3 {
+                  margin: 0 0 0.75rem;
+                  font-size: 1rem;
+                  color: #0f766e;
+              }
+              .summary-card p {
+                  margin: 0;
+                  color: #334155;
+                  font-size: 0.95rem;
+                  line-height: 1.6;
+              }
+              .summary-card .summary-title {
+                  font-size: 1.1rem;
+                  font-weight: 700;
+                  color: #065f46;
+                  margin-bottom: 0.5rem;
+              }
+              .export-summary {
+                  margin-top: 2rem;
+                  padding: 1.25rem;
+                  background: #ecfdf5;
+                  border: 1px solid #a7f3d0;
+                  border-radius: 18px;
+              }
+              .export-summary h2 {
+                  margin: 0 0 0.5rem;
+                  font-size: 1.3rem;
+                  color: #065f46;
+              }
+              .export-summary p {
+                  margin: 0.5rem 0 0;
+                  color: #166534;
+                  font-size: 0.95rem;
+              }
               .signature-name {
                   font-weight: bold;
                   text-decoration: underline;
@@ -617,7 +934,7 @@ export default function Piket() {
 
     htmlContent += `
           </div>
-          
+
           <div class="signature-container">
               <div class="signature-box">
                   <p class="signature-details">Way Jepara, ${currentDate}</p>
@@ -643,9 +960,15 @@ export default function Piket() {
   };
 
   // Component for a single schedule card, defined inside to access scope easily
-  const ScheduleCard = ({ item }) => {
+  const ScheduleCard = ({ item, canEdit }) => {
     const isToday = useMemo(() => checkIsToday(item.fullDate), [item.fullDate]);
-    const canEdit = user && user.role === 'danramil';
+    const editable = canEdit && user && user.role === 'danramil';
+
+    // Tambahkan logging untuk mendeteksi jika 'item' tidak valid
+    if (!item || !item.fullDate || !item.date || !item.personnel) {
+      console.error("ScheduleCard received invalid item prop:", item);
+      return null; // Render nothing or a placeholder for invalid data
+    }
 
     return (
       <div className="schedule-card">
@@ -761,19 +1084,136 @@ export default function Piket() {
         >
           <MapPin size={18} /> Piket Korem
         </button>
+        <button 
+          className={`tab-button ${activeTab === 'patroli' ? 'active' : ''}`}
+          onClick={() => setActiveTab('patroli')}
+        >
+          <Clock size={18} /> Piket Patroli
+        </button>
       </div>
 
-      {/* Content Grid */}
-      <div className="schedule-grid">
-        {getActiveData().length > 0 ? (
-          getActiveData().map((item) => <ScheduleCard key={item.id} item={item} />)
-        ) : (
-          <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '16px', color: '#64748b'}}>
-            Tidak ada jadwal piket yang tersedia untuk ditampilkan.
+      {activeTab === 'patroli' ? (
+        <div className="patroli-panel">
+          <div className="patroli-header">
+            <div>
+              <h2>Patroli Sabtu</h2>
+              <p className="patroli-description">Generate jadwal patroli setiap hari Sabtu untuk 4 regu, dengan input personnel per regu.</p>
+            </div>
+            {user && user.role === 'danramil' && (
+              <button className="btn-generate" onClick={executeCreatePatroliSchedule}>
+                <CalendarPlus size={18} /> Buat Jadwal Patroli
+              </button>
+            )}
           </div>
-        )}
-      </div>
 
+          <div className="patroli-form-grid">
+            <div className="form-group">
+              <label className="form-label">Bulan & Tahun Patroli</label>
+              <input
+                type="month"
+                className="form-input"
+                value={patroliMonthYear}
+                onChange={(e) => setPatroliMonthYear(e.target.value)}
+              />
+            </div>
+            {patroliReguDetails.map((regu, index) => (
+              <div className="form-group" key={`regu-${index}`}>
+                <label className="form-label">Nama Regu {index + 1}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={regu.name}
+                  onChange={(e) => {
+                    const newReguDetails = [...patroliReguDetails];
+                    newReguDetails[index] = { ...newReguDetails[index], name: e.target.value || `Regu ${index + 1}` };
+                    setPatroliReguDetails(newReguDetails);
+                  }}
+                />
+                <label className="form-label" style={{ marginTop: '0.75rem' }}>Personel Regu {index + 1}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Pisahkan nama dengan koma"
+                  value={regu.personnel}
+                  onChange={(e) => {
+                    const newReguDetails = [...patroliReguDetails];
+                    newReguDetails[index] = { ...newReguDetails[index], personnel: e.target.value };
+                    setPatroliReguDetails(newReguDetails);
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="schedule-grid">
+            {patroliScheduleData.schedule && patroliScheduleData.schedule.length > 0 ? (
+              patroliScheduleData.schedule.map((item) => (
+                <ScheduleCard key={item.id} item={item} canEdit={false} />
+              ))
+            ) : (
+              <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', background: 'white', borderRadius: '16px', color: '#64748b'}}>
+                Jadwal patroli Sabtu belum tersedia. Gunakan form di atas untuk membuatnya.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="schedule-grid">
+            {getActiveData().length > 0 ? (
+              getActiveData().map((item) => <ScheduleCard key={item.id} item={item} canEdit={user && user.role === 'danramil'} />)
+            ) : (
+              <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '16px', color: '#64748b'}}>
+                Tidak ada jadwal piket yang tersedia untuk ditampilkan.
+              </div>
+            )}
+          </div>
+
+          <div className="personnel-summary">
+            <div className="summary-header">
+              <div>
+                <h2>Ringkasan Jadwal Personel</h2>
+                <p className="summary-description">Pilih personel untuk melihat tanggal bertugas di Koramil, Kodim, dan Korem.</p>
+              </div>
+              <div className="summary-select-wrapper">
+                <select
+                  className="form-input"
+                  value={selectedSummaryPersonId}
+                  onChange={(e) => setSelectedSummaryPersonId(e.target.value)}
+                >
+                  <option value="">-- Pilih Personel --</option>
+                  {allPersonnelForExclusion
+                    .filter((person) => person.jabatan !== 'Danramil')
+                    .sort((a, b) => a.nama.localeCompare(b.nama))
+                    .map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.nama} ({person.pangkat})
+                      </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {selectedSummaryPerson && (
+              <div className="summary-cards">
+                {['koramil', 'kodim', 'korem'].map((category) => (
+                  <div key={category} className="summary-card">
+                    <h3>{category === 'koramil' ? 'Piket Koramil' : category === 'kodim' ? 'Piket Kodim' : 'Piket Korem'}</h3>
+                    <p className="summary-personnel-name">{selectedSummaryPerson.nama}</p>
+                    {scheduleSummary[category].length > 0 ? (
+                      <p className="summary-dates">
+                        {scheduleSummary[category].join(', ')}
+                      </p>
+                    ) : (
+                      <p className="summary-no-dates">Tidak ada tugas pada kategori ini.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
       {/* Modal Edit Jadwal Piket */}
       {isEditModalOpen && editFormData && (
         <div className="modal-overlay">
@@ -896,7 +1336,7 @@ export default function Piket() {
                                 .filter(p => p.jabatan !== 'Danramil')
                                 .map(person => (
                                     <option key={person.id} value={person.id}>
-                                        {person.nama} ({person.jabatan})
+                                        {person.nama} ({person.pangkat})
                                     </option>
                             ))}
                         </select>
@@ -905,36 +1345,75 @@ export default function Piket() {
 
                 {/* Right Section: Exclusions */}
                 <div className="config-section">
-                    <label className="form-label">Kecualikan Personel dari Piket Harian</label>
-                    <div className="exclusion-grid-container">
-                        {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length > 0 ? (
-                            allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
-                                <div key={person.id} className="exclusion-item">
-                                    <input
-                                        type="checkbox"
-                                        id={`exclude-${person.id}`}
-                                        className="exclusion-checkbox"
-                                        checked={excludedPersonnelIds.includes(person.id)}
-                                        onChange={(e) => {
-                                            const personId = person.id;
-                                            if (e.target.checked) {
-                                                setExcludedPersonnelIds(prev => [...prev, personId]);
-                                            } else {
-                                                setExcludedPersonnelIds(prev => prev.filter(id => id !== personId));
-                                            }
-                                        }}
-                                    />
-                                    <label htmlFor={`exclude-${person.id}`} className="exclusion-label">
-                                        <span className="exclusion-name">{person.nama}</span>
-                                        <span className="exclusion-role">{person.jabatan}</span>
-                                    </label>
-                                </div>
-                            ))
-                        ) : (
-                            <p style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', gridColumn: '1 / -1' }}>
-                                Tidak ada personel yang tersedia untuk dikecualikan.
-                            </p>
-                        )}
+                    {/* Koramil Exclusions */}
+                    <div>
+                        <label className="form-label">Kecualikan dari Piket Koramil</label>
+                        <div className="exclusion-grid-container">
+                            {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length > 0 ? (
+                                allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
+                                    <div key={`koramil-exc-${person.id}`} className="exclusion-item">
+                                        <input
+                                            type="checkbox"
+                                            id={`exclude-koramil-${person.id}`}
+                                            className="exclusion-checkbox"
+                                            checked={(excludedPersonnelIds.koramil || []).includes(person.id)}
+                                            onChange={(e) => {
+                                                const personId = person.id;
+                                                setExcludedPersonnelIds((prev) => ({
+                                                    ...prev,
+                                                    koramil: e.target.checked
+                                                        ? [...(prev.koramil || []), personId]
+                                                        : (prev.koramil || []).filter((id) => id !== personId),
+                                                }));
+                                            }}
+                                        />
+                                        <label htmlFor={`exclude-koramil-${person.id}`} className="exclusion-label">
+                                            <span className="exclusion-name">{person.nama}</span>
+                                            <span className="exclusion-rank">{person.pangkat}</span>
+                                        </label>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', gridColumn: '1 / -1' }}>
+                                    Tidak ada personel yang tersedia.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    {/* Kodim Exclusions */}
+                    <div style={{ marginTop: '1.5rem' }}>
+                        <label className="form-label">Kecualikan dari Piket Kodim</label>
+                        <div className="exclusion-grid-container">
+                            {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length > 0 ? (
+                                allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
+                                    <div key={`kodim-exc-${person.id}`} className="exclusion-item">
+                                        <input
+                                            type="checkbox"
+                                            id={`exclude-kodim-${person.id}`}
+                                            className="exclusion-checkbox"
+                                            checked={(excludedPersonnelIds.kodim || []).includes(person.id)}
+                                            onChange={(e) => {
+                                                const personId = person.id;
+                                                setExcludedPersonnelIds((prev) => ({
+                                                    ...prev,
+                                                    kodim: e.target.checked
+                                                        ? [...(prev.kodim || []), personId]
+                                                        : (prev.kodim || []).filter((id) => id !== personId),
+                                                }));
+                                            }}
+                                        />
+                                        <label htmlFor={`exclude-kodim-${person.id}`} className="exclusion-label">
+                                            <span className="exclusion-name">{person.nama}</span>
+                                            <span className="exclusion-rank">{person.pangkat}</span>
+                                        </label>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', gridColumn: '1 / -1' }}>
+                                    Tidak ada personel yang tersedia.
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
