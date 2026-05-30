@@ -58,9 +58,23 @@ export default function Dashboard() {
             <BookOpen size={32} />
           </div>
           <h3 className="mv-title">Misi Kami</h3>
-          <p className="mv-description">
-            Melaksanakan pembinaan teritorial, keamanan dan pertahanan, serta pemberdayaan masyarakat untuk menciptakan lingkungan yang aman, damai, dan sejahtera.
-          </p>
+          <ul className="mv-description" style={{ textAlign: 'left', paddingLeft: '20px', listStyle: 'decimal', fontSize: '0.9rem', lineHeight: '1.6' }}>
+            <li style={{ marginBottom: '1rem' }}>
+              Mewujudkan kekuatan, kemampuan dan gelar kekuatan jajaran TNI Angkatan Darat yang profesional dan modern dalam penyelenggaraan pertahanan Negara Kesatuan Republik Indonesia di darat.
+            </li>
+            <li style={{ marginBottom: '1rem' }}>
+              Meningkatkan dan memperkokoh jatidiri prajurit TNI Angkatan Darat yang tangguh, yang memiliki keunggulan moral, rela berkorban dan pantang menyerah dalam menjaga kedaulatan negara dan mempertahankan integritas keutuhan wilayah Negara Kesatuan Republik Indonesia berdasarkan Sapta Marga dan Sumpah Prajurit.
+            </li>
+            <li style={{ marginBottom: '1rem' }}>
+              Mewujudkan kualitas prajurit TNI Angkatan Darat yang memiliki penguasaan ilmu dan keterampilan prajurit melalui pembinaan doktrin, pendidikan dan latihan yang sistematis, dan meningkatkan kesejahteraannya.
+            </li>
+            <li style={{ marginBottom: '1rem' }}>
+              Mewujudkan kesiapan operasional penindakan ancaman baik dalam bentuk ancaman tradisional maupun ancaman non tradisional. Mewujudkan kerjasama militer dengan negara-negara sahabat. baik dalam rangka confidence building measure (CBM) maupun untuk meningkatkan profesionalitas prajurit.
+            </li>
+            <li>
+              Mewujudkan kemanunggalan TNI-Rakyat sebagai roh kekuatan TNI Angkatan Darat dalam upaya pertahanan negara.
+            </li>
+          </ul>
         </div>
         <div className="vision-card">
           <div className="mv-icon">
@@ -68,7 +82,7 @@ export default function Dashboard() {
           </div>
           <h3 className="mv-title">Visi Kami</h3>
           <p className="mv-description">
-            Menjadi institusi militer modern yang profesional, terpercaya, dan berdedikasi dalam melayani masyarakat dan negara dengan integritas tinggi.
+            Solid, Profesional, Tangguh, Modern, Berwawasan Kebangsaan dan Dicintai Rakyat.
           </p>
         </div>
       </div>

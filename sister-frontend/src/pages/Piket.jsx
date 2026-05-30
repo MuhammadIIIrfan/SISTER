@@ -58,9 +58,9 @@ export default function Piket() {
 
   const [selectedMonthYear, setSelectedMonthYear] = useState(new Date().toISOString().substring(0, 7)); // YYYY-MM format
   // New state for excluded personnel
-  const [excludedPersonnelIds, setExcludedPersonnelIds] = useState({ koramil: [], kodim: [] });
-  const [koremPiketPersonelId, setKoremPiketPersonelId] = useState('');
-  const [selectedSummaryPersonId, setSelectedSummaryPersonId] = useState('');
+  const [includedPersonnelIds, setIncludedPersonnelIds] = useState({ koramil: [], kodim: [] });
+  const [koremPiketPersonelIds, setKoremPiketPersonelIds] = useState([]);
+  const [selectedSummaryPersonName, setSelectedSummaryPersonName] = useState('');
   const [allPersonnelForExclusion, setAllPersonnelForExclusion] = useState([]); // To store all personnel for the dropdown
   const [kodimDatesInput, setKodimDatesInput] = useState('');
   const [koremDatesInput, setKoremDatesInput] = useState('');
@@ -103,7 +103,7 @@ export default function Piket() {
   const [patroliScheduleData, setPatroliScheduleData] = useState(() => parsePatroliData());
 
   // Generator Jadwal Otomatis untuk 30 Hari
-  const generateSchedule = (apiPersonnel = null, excludedIds = { koramil: [], kodim: [] }, monthYear = null, kodimDatesStr = '', koremDatesStr = '', koremPiketId = null) => {
+  const generateSchedule = (apiPersonnel = null, includedIds = { koramil: [], kodim: [] }, monthYear = null, kodimDatesStr = '', koremDatesStr = '', koremPiketIds = []) => {
     const newSchedules = { koramil: [], kodim: [], korem: [] };
 
     const parseDates = (str) => {
@@ -126,28 +126,35 @@ export default function Piket() {
     
     const startDate = new Date(year, month, 1);
 
-    let koremPers = null;
+    let koremPers = [];
     let koramilPool = [], kodimPool = [];
 
     // 1. Determine Korem Personnel (Pawas Korem)
     // Determine Korem Personnel (Pawas Korem) based on selection
-    if (apiPersonnel && apiPersonnel.length > 0 && koremPiketId) {
-        // Use '==' for loose comparison because koremPiketId from <select> is a string, while p.id is a number.
-        const selectedKoremPerson = apiPersonnel.find(p => p.id == koremPiketId);
-        if (selectedKoremPerson) {
-            koremPers = { name: selectedKoremPerson.nama, role: 'Pawas Korem', initial: getInitial(selectedKoremPerson.nama), rank: selectedKoremPerson.pangkat };
-        }
+    if (apiPersonnel && apiPersonnel.length > 0 && koremPiketIds && koremPiketIds.length > 0) {
+        koremPers = koremPiketIds.map(id => {
+            const selectedPerson = apiPersonnel.find(p => p.id == id);
+            if (selectedPerson) {
+                return {
+                    name: selectedPerson.nama,
+                    role: 'Pawas Korem',
+                    initial: getInitial(selectedPerson.nama),
+                    rank: selectedPerson.pangkat
+                };
+            }
+            return null;
+        }).filter(Boolean); // filter(Boolean) removes any nulls if a person wasn't found
     }
 
     // Fallback if no person is selected or found
-    if (!koremPers) {
-        koremPers = { name: 'Belum Ditentukan', role: 'Pawas Korem', initial: '??', rank: '-' };
+    if (koremPers.length === 0) {
+        koremPers = [{ name: 'Belum Ditentukan', role: 'Pawas Korem', initial: '??', rank: '-' }];
     }
 
     // 2. Prepare the pools for piket (respecting exclusions)
     if (apiPersonnel && apiPersonnel.length > 0) {
-      const createPool = (excludeList) => apiPersonnel
-        .filter(p => p.jabatan !== 'Danramil' && !excludeList.includes(p.id))
+      const createPool = (includeList) => apiPersonnel
+        .filter(p => (includeList || []).includes(p.id))
         .map(p => ({
           name: p.nama,
           role: p.jabatan,
@@ -156,8 +163,8 @@ export default function Piket() {
           rank: p.pangkat
         }));
       
-      koramilPool = createPool(excludedIds.koramil || []);
-      kodimPool = createPool(excludedIds.kodim || []);
+      koramilPool = createPool(includedIds.koramil || []);
+      kodimPool = createPool(includedIds.kodim || []);
     }
 
     // 3. Fallback for pools if they are empty after filtering/exclusion
@@ -180,41 +187,18 @@ export default function Piket() {
       kodimPool = [...defaultKodim];
     }
 
-    // Generate Jadwal Korem (hanya pada tanggal spesifik yang dipilih)
-    koremDays.forEach((d, idx) => {
-      const date = new Date(year, month, d);
-      if (date.getMonth() !== month) return; // Abaikan jika tanggal tidak valid (cth: 31 Feb)
-      
-      newSchedules.korem.push({
-        id: `korem-${d}-${idx}`,
-        day: date.toLocaleDateString('id-ID', { weekday: 'long' }),
-        date: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-        fullDate: date.toISOString(),
-        shift: '08:00 - 08:00 (24 Jam)',
-        location: 'Makorem 043/Gatam',
-        personnel: [koremPers]
-      });
-    });
-    // Urutkan jadwal korem berdasarkan tanggal
-    newSchedules.korem.sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
-
     // Seedable pseudo-random number generator (LCG) for deterministic shuffling
     // This ensures that for a given month/year, the shuffle order is always the same.
     function mulberry32(seed) {
-        return function() {
-            seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-            var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        }
+      return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      }
     }
 
     const numberOfDaysInMonth = new Date(year, month + 1, 0).getDate();
-    // Algoritma yang disempurnakan:
-    // - Menggunakan satu 'shiftCounts' untuk keadilan menyeluruh.
-    // - Melacak hari piket terakhir untuk setiap personel.
-    // - Menghindari konflik pada hari yang sama.
-    // - Menerapkan waktu istirahat minimal 2 hari.
     const useIdAsKey = koramilPool.every(p => p.id) && kodimPool.every(p => p.id);
     const getKey = (person) => useIdAsKey ? person.id : person.name;
 
@@ -222,76 +206,49 @@ export default function Piket() {
     const kodimShiftCounts = {};
     const lastPiketDay = {};
 
-    // Inisialisasi data pelacakan untuk semua personel yang mungkin bertugas
     const allAvailablePersonnel = [...new Map([...koramilPool, ...kodimPool].map(item => [getKey(item), item])).values()];
 
-    // --- LOGIKA BARU: Buat urutan acak yang berbeda setiap kali generate untuk fleksibilitas ---
-    // Ini memastikan urutan acak yang berbeda setiap kali jadwal dibuat ulang, bahkan untuk bulan yang sama.
-    // 1. Buat seed unik untuk bulan, tahun, dan waktu generate ini
     const seed = year * 100 + month + Math.floor(Math.random() * 1000000);
     const random = mulberry32(seed);
 
-    // 2. Lakukan Fisher-Yates shuffle pada daftar personel untuk mendapatkan urutan acak yang deterministik
     const shuffledPersonnel = [...allAvailablePersonnel];
     for (let k = shuffledPersonnel.length - 1; k > 0; k--) {
-        const j = Math.floor(random() * (k + 1));
-        [shuffledPersonnel[k], shuffledPersonnel[j]] = [shuffledPersonnel[j], shuffledPersonnel[k]];
+      const j = Math.floor(random() * (k + 1));
+      [shuffledPersonnel[k], shuffledPersonnel[j]] = [shuffledPersonnel[j], shuffledPersonnel[k]];
     }
 
-    // 3. Buat Map untuk lookup urutan tie-breaker dengan cepat dari daftar yang sudah diacak
     const tieBreakerMap = new Map(shuffledPersonnel.map((p, index) => [getKey(p), index]));
-    // --- AKHIR LOGIKA BARU ---
 
-    // Inisialisasi data pelacakan untuk semua personel yang mungkin bertugas
-    shuffledPersonnel.forEach(p => { // Gunakan daftar yang sudah diacak untuk inisialisasi
-        const key = getKey(p);
-        shiftCounts[key] = 0;
-        kodimShiftCounts[key] = 0; // Tambahkan pelacakan khusus untuk piket Kodim
-        lastPiketDay[key] = -99; // Inisialisasi dengan nilai rendah agar bisa langsung dapat jadwal
+    shuffledPersonnel.forEach(p => {
+      const key = getKey(p);
+      shiftCounts[key] = 0;
+      kodimShiftCounts[key] = 0;
+      lastPiketDay[key] = -99;
     });
-    
-    // Define a single sorting function that prioritizes:
-    // 1. Fewer shifts (ascending)
-    // 2. More rest days (longer gap since last piket, descending)
-    // 3. Monthly pseudo-random tie-breaker (ascending)
+
     const sortPersonnelByPriority = (a, b, currentDay) => {
-        const keyA = getKey(a);
-        const keyB = getKey(b);
-
-        // Priority 1: Fewer shifts
-        const shiftDiff = shiftCounts[keyA] - shiftCounts[keyB];
-        if (shiftDiff !== 0) return shiftDiff;
-
-        // Priority 2: More rest days (longer gap since last piket)
-        const restDiff = (currentDay - lastPiketDay[keyB]) - (currentDay - lastPiketDay[keyA]);
-        if (restDiff !== 0) return restDiff;
-
-        // Priority 3: Monthly pseudo-random tie-breaker
-        return tieBreakerMap.get(keyA) - tieBreakerMap.get(keyB);
+      const keyA = getKey(a);
+      const keyB = getKey(b);
+      const shiftDiff = shiftCounts[keyA] - shiftCounts[keyB];
+      if (shiftDiff !== 0) return shiftDiff;
+      const restDiff = (currentDay - lastPiketDay[keyB]) - (currentDay - lastPiketDay[keyA]);
+      if (restDiff !== 0) return restDiff;
+      return tieBreakerMap.get(keyA) - tieBreakerMap.get(keyB);
     };
 
-    // New sorting function specifically for Kodim, incorporating the max 2 shifts rule
     const sortKodimPersonnel = (a, b, currentDay) => {
-        const keyA = getKey(a);
-        const keyB = getKey(b);
-
-        // Primary Priority for Kodim: Fewer Kodim shifts (max 2)
-        // This ensures those with 0 or 1 shifts are prioritized over those with 2 or more.
-        const kodimShiftDiff = kodimShiftCounts[keyA] - kodimShiftCounts[keyB];
-        if (kodimShiftDiff !== 0) return kodimShiftDiff;
-
-        // Secondary Priority: More rest days (longer gap since last piket)
-        const restDiff = (currentDay - lastPiketDay[keyB]) - (currentDay - lastPiketDay[keyA]);
-        if (restDiff !== 0) return restDiff;
-
-        // Tertiary Priority: Fewer total shifts (as a tie-breaker for rest days)
-        const shiftDiff = shiftCounts[keyA] - shiftCounts[keyB];
-        if (shiftDiff !== 0) return shiftDiff;
-
-        // Quaternary Priority: Monthly pseudo-random tie-breaker
-        return tieBreakerMap.get(keyA) - tieBreakerMap.get(keyB);
+      const keyA = getKey(a);
+      const keyB = getKey(b);
+      const kodimShiftDiff = kodimShiftCounts[keyA] - kodimShiftCounts[keyB];
+      if (kodimShiftDiff !== 0) return kodimShiftDiff;
+      const restDiff = (currentDay - lastPiketDay[keyB]) - (currentDay - lastPiketDay[keyA]);
+      if (restDiff !== 0) return restDiff;
+      const shiftDiff = shiftCounts[keyA] - shiftCounts[keyB];
+      if (shiftDiff !== 0) return shiftDiff;
+      return tieBreakerMap.get(keyA) - tieBreakerMap.get(keyB);
     };
 
+    let koremPersonnelRotationIndex = 0;
 
     for (let i = 0; i < numberOfDaysInMonth; i++) {
       const currentDay = i + 1;
@@ -300,89 +257,102 @@ export default function Piket() {
       const dayStr = date.toLocaleDateString('id-ID', { weekday: 'long' });
       const fullDate = date.toISOString();
 
-      let personsOnKodimDutyTodayKeys = [];
+      let personsOnDutyTodayKeys = [];
 
-      // Prioritaskan penjadwalan Kodim (1 orang per hari)
-      if (kodimDays.includes(currentDay)) {
-        if (kodimPool.length > 0) {
-            let kodimPerson = null;
+      // 1. Schedule Korem (highest priority for its specific days)
+      if (koremDays.includes(currentDay) && koremPers.length > 0 && koremPers[0].name !== 'Belum Ditentukan') {
+        const personForThisDay = koremPers[koremPersonnelRotationIndex % koremPers.length];
+        koremPersonnelRotationIndex++;
 
-            // Sort all Kodim candidates using the Kodim-specific sorting logic
-            // This will naturally prioritize those with < 2 shifts, then rest days, etc.
-            let candidates = [...kodimPool];
-            candidates.sort((a, b) => sortKodimPersonnel(a, b, currentDay));
-            
-            // Find the first candidate who has less than 2 Kodim shifts
-            kodimPerson = candidates.find(person => kodimShiftCounts[getKey(person)] < 2);
+        newSchedules.korem.push({
+          id: `korem-${currentDay}`,
+          day: dayStr,
+          date: dateStr,
+          fullDate: fullDate,
+          shift: '08:00 - 08:00 (24 Jam)',
+          location: 'Makorem 043/Gatam',
+          personnel: [personForThisDay]
+        });
 
-
-            if (kodimPerson) {
-                newSchedules.kodim.push({
-                    id: `kodim-${i}`,
-                    day: dayStr,
-                    date: dateStr,
-                    fullDate: fullDate,
-                    shift: '08:00 - 08:00 (24 Jam)',
-                    personnel: [kodimPerson] // Hanya satu personel
-                });
-                // Update data untuk setiap personel yang ditugaskan
-                const key = getKey(kodimPerson);
-                shiftCounts[key]++;
-                kodimShiftCounts[key]++; // Increment Kodim-specific count
-                lastPiketDay[key] = currentDay;
-                personsOnKodimDutyTodayKeys.push(key); // Ini akan berisi hanya satu kunci
-            } else {
-                // Fallback jika tidak ada personel yang tersedia (semua sudah 2 kali piket Kodim)
-                newSchedules.kodim.push({ id: `kodim-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel Tersedia', role: 'Kosong', initial: 'NA', rank: '-' }] });
-            }
-        } else {
-            // Fallback jika pool kodim kosong
-            newSchedules.kodim.push({ id: `kodim-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }] });
+        const key = getKey(personForThisDay);
+        if (key in shiftCounts) {
+          shiftCounts[key]++;
+          lastPiketDay[key] = currentDay;
+          personsOnDutyTodayKeys.push(key);
         }
       }
 
-      // Jadwalkan Piket Koramil
+      // 2. Schedule Kodim (if it's a Kodim day)
+      if (kodimDays.includes(currentDay)) {
+        if (kodimPool.length > 0) {
+          let candidates = kodimPool.filter(p => !personsOnDutyTodayKeys.includes(getKey(p)));
+          candidates.sort((a, b) => sortKodimPersonnel(a, b, currentDay));
+          let kodimPerson = candidates.find(person => kodimShiftCounts[getKey(person)] < 2);
+
+          if (!kodimPerson && candidates.length > 0) {
+            kodimPerson = candidates[0];
+          }
+
+          if (kodimPerson) {
+            newSchedules.kodim.push({
+              id: `kodim-${currentDay}`,
+              day: dayStr,
+              date: dateStr,
+              fullDate: fullDate,
+              shift: '08:00 - 08:00 (24 Jam)',
+              personnel: [kodimPerson]
+            });
+            const key = getKey(kodimPerson);
+            shiftCounts[key]++;
+            kodimShiftCounts[key]++;
+            lastPiketDay[key] = currentDay;
+            personsOnDutyTodayKeys.push(key);
+          } else {
+            newSchedules.kodim.push({ id: `kodim-${currentDay}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel Tersedia', role: 'Kosong', initial: 'NA', rank: '-' }] });
+          }
+        } else {
+          newSchedules.kodim.push({ id: `kodim-${currentDay}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }] });
+        }
+      }
+
+      // 3. Schedule Koramil (for every day)
       if (koramilPool.length > 0) {
-          let koramilPerson = null;
+        let koramilPerson = null;
+        let availableCandidates = koramilPool.filter(p => !personsOnDutyTodayKeys.includes(getKey(p)));
+        let strictKoramilCandidates = availableCandidates.filter(p => currentDay - lastPiketDay[getKey(p)] > 3);
+        strictKoramilCandidates.sort((a, b) => sortPersonnelByPriority(a, b, currentDay));
 
-          // Attempt 1: Find candidates satisfying strict 3-day rest AND not on Kodim duty
-          let strictKoramilCandidates = koramilPool.filter(p => 
-              !personsOnKodimDutyTodayKeys.includes(getKey(p)) && 
-              currentDay - lastPiketDay[getKey(p)] > 3
-          );
-          strictKoramilCandidates.sort((a, b) => sortPersonnelByPriority(a, b, currentDay));
+        if (strictKoramilCandidates.length > 0) {
+          koramilPerson = strictKoramilCandidates[0];
+        } else if (availableCandidates.length > 0) {
+          availableCandidates.sort((a, b) => sortPersonnelByPriority(a, b, currentDay));
+          koramilPerson = availableCandidates[0];
+        }
 
-          if (strictKoramilCandidates.length > 0) {
-              koramilPerson = strictKoramilCandidates[0];
-          } else {
-              // Attempt 2: If no one satisfies strict rest, pick from all available (not on Kodim duty),
-              // prioritizing fewest shifts and then longest rest, even if < 3 days.
-              let allKoramilCandidates = koramilPool.filter(p => !personsOnKodimDutyTodayKeys.includes(getKey(p)));
-              allKoramilCandidates.sort((a, b) => sortPersonnelByPriority(a, b, currentDay));
-              koramilPerson = allKoramilCandidates[0];
-          }
-
-          if (koramilPerson) {
-              const key = getKey(koramilPerson);
-              newSchedules.koramil.push({
-                  id: `koramil-${i}`,
-                  day: dayStr,
-                  date: dateStr,
-                  fullDate: fullDate,
-                  shift: '08:00 - 08:00 (24 Jam)',
-                  personnel: [koramilPerson]
-              });
-              shiftCounts[key]++;
-              lastPiketDay[key] = currentDay;
-          } else {
-              // Fallback jika tidak ada personel yang bisa ditugaskan (misal, semua orang sedang piket Kodim)
-              newSchedules.koramil.push({ id: `koramil-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Konflik Jadwal', role: 'Kosong', initial: '!!', rank: '-' }] });
-          }
+        if (koramilPerson) {
+          const key = getKey(koramilPerson);
+          newSchedules.koramil.push({
+            id: `koramil-${currentDay}`,
+            day: dayStr,
+            date: dateStr,
+            fullDate: fullDate,
+            shift: '08:00 - 08:00 (24 Jam)',
+            personnel: [koramilPerson]
+          });
+          shiftCounts[key]++;
+          lastPiketDay[key] = currentDay;
+        } else {
+          newSchedules.koramil.push({ id: `koramil-${currentDay}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Konflik Jadwal', role: 'Kosong', initial: '!!', rank: '-' }] });
+        }
       } else {
-          // Fallback jika pool koramil kosong
-          newSchedules.koramil.push({ id: `koramil-${i}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }] });
+        newSchedules.koramil.push({ id: `koramil-${currentDay}`, day: dayStr, date: dateStr, fullDate, shift: '08:00 - 08:00 (24 Jam)', personnel: [{ name: 'Tidak Ada Personel', role: 'Kosong', initial: 'NA', rank: '-' }] });
       }
     }
+
+    // Sort Korem and Kodim schedules at the end, as they are no longer generated in order
+    newSchedules.korem.sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+    newSchedules.kodim.sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+
     return newSchedules;
   };
 
@@ -443,16 +413,22 @@ export default function Piket() {
             const data = await res.json();
             setAllPersonnelForExclusion(data);
 
+            // Pre-select all available personnel by default for the inclusion lists
+            const allAvailableIds = data
+                .filter(p => p.jabatan !== 'Danramil')
+                .map(p => p.id);
+            setIncludedPersonnelIds({ koramil: allAvailableIds, kodim: allAvailableIds });
+
             // Pre-select Batuud for Korem duty if available
             const batuud = data.find(p => p.jabatan === 'Batuud');
             if (batuud) {
-                setKoremPiketPersonelId(batuud.id);
+                setKoremPiketPersonelIds([batuud.id]);
             }
             
             // Generate initial schedule if none saved, using fetched personnel
             if (!localStorage.getItem('piketData')) {
                 const currentMonthYear = new Date().toISOString().substring(0, 7);
-                const initialSchedules = generateSchedule(data, { koramil: [], kodim: [] }, currentMonthYear, '5, 15, 25', '10, 20', batuud ? batuud.id : null);
+                const initialSchedules = generateSchedule(data, { koramil: allAvailableIds, kodim: allAvailableIds }, currentMonthYear, '5, 15, 25', '10, 20', batuud ? [batuud.id] : []);
                 setSchedules(initialSchedules);
                 localStorage.setItem('piketData', JSON.stringify(initialSchedules));
             }
@@ -481,7 +457,7 @@ export default function Piket() {
             // If fetching personnel fails, still try to generate with default data
             if (!localStorage.getItem('piketData')) {
                 const currentMonthYear = new Date().toISOString().substring(0, 7);
-                const initialSchedules = generateSchedule(null, { koramil: [], kodim: [] }, currentMonthYear, '5, 15, 25', '10, 20', null); // Pass null for apiPersonnel
+                const initialSchedules = generateSchedule(null, { koramil: [], kodim: [] }, currentMonthYear, '5, 15, 25', '10, 20', []); // Pass null for apiPersonnel
                 setSchedules(initialSchedules);
                 localStorage.setItem('piketData', JSON.stringify(initialSchedules));
             }
@@ -516,23 +492,23 @@ export default function Piket() {
       const res = await fetch('http://localhost:5000/api/personel');
       const apiPersonnel = await res.json();
       
-      // Validasi: Pastikan personel piket Korem dipilih
-      if (!koremPiketPersonelId) {
-        setNotification({ type: 'error', message: 'Silakan pilih personel untuk piket Korem.' });
+      // Validasi: Pastikan personel piket Korem dipilih jika tanggalnya ada
+      if (koremDatesInput && koremPiketPersonelIds.length === 0) {
+        setNotification({ type: 'error', message: 'Silakan pilih minimal satu personel untuk piket Korem.' });
         setIsConfirmModalOpen(false);
         setIsGenerating(false);
         return;
       }
 
       // Validasi: Pastikan ada cukup personel setelah pengecualian
-      const availableForKoramil = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !(excludedPersonnelIds.koramil || []).includes(p.id));
+      const availableForKoramil = includedPersonnelIds.koramil || [];
       if (availableForKoramil.length < 1) {
         setNotification({ type: 'error', message: 'Minimal 1 personel harus tersedia untuk piket Koramil.' });
         setIsConfirmModalOpen(false);
         setIsGenerating(false);
         return;
       }
-      const availableForKodim = apiPersonnel.filter(p => p.jabatan !== 'Danramil' && !(excludedPersonnelIds.kodim || []).includes(p.id));
+      const availableForKodim = includedPersonnelIds.kodim || [];
       if (kodimDatesInput && availableForKodim.length < 1) {
         setNotification({ type: 'error', message: 'Minimal 1 personel harus tersedia untuk piket Kodim jika tanggal ditentukan.' });
         setIsConfirmModalOpen(false);
@@ -541,16 +517,22 @@ export default function Piket() {
       }
 
       // Pass excludedPersonnelIds to generateSchedule
-      const newSchedules = generateSchedule(apiPersonnel, excludedPersonnelIds, selectedMonthYear, kodimDatesInput, koremDatesInput, koremPiketPersonelId);
+      const newSchedules = generateSchedule(apiPersonnel, includedPersonnelIds, selectedMonthYear, kodimDatesInput, koremDatesInput, koremPiketPersonelIds);
       setSchedules(newSchedules); // Update state with new schedules
       localStorage.setItem('piketData', JSON.stringify(newSchedules));
       setIsConfirmModalOpen(false);
       setNotification({ type: 'success', message: 'Jadwal piket berhasil dibuat untuk bulan yang dipilih!' });
-      setExcludedPersonnelIds({ koramil: [], kodim: [] }); // Reset excluded personnel after generation
+      // Reset included personnel to all available
+      const allAvailableIds = apiPersonnel
+        .filter(p => p.jabatan !== 'Danramil')
+        .map(p => p.id);
+      setIncludedPersonnelIds({ koramil: allAvailableIds, kodim: allAvailableIds });
       // Reset Korem selection to default (Batuud)
       const batuud = apiPersonnel.find(p => p.jabatan === 'Batuud');
       if (batuud) {
-        setKoremPiketPersonelId(batuud.id);
+        setKoremPiketPersonelIds([batuud.id]);
+      } else {
+        setKoremPiketPersonelIds([]);
       }
     } catch (err) {
       console.error("Gagal fetch personel:", err);
@@ -577,25 +559,51 @@ export default function Piket() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
 
+  // Create a dynamic list of all unique personnel currently in any schedule
+  const allPersonnelInSchedules = useMemo(() => {
+    const personnelMap = new Map();
+
+    const processSchedule = (scheduleArray) => {
+      (scheduleArray || []).forEach(item => {
+        (item.personnel || []).forEach(person => {
+          // Use name as a unique key to accommodate manually added personnel
+          if (person && person.name && !person.name.toLowerCase().includes('tidak ada') && !person.name.toLowerCase().includes('konflik') && !person.name.toLowerCase().includes('belum ditentukan')) {
+            if (!personnelMap.has(person.name)) {
+              personnelMap.set(person.name, {
+                // Create a consistent object structure.
+                id: person.id || person.name, // Use name as ID if not present
+                nama: person.name,
+                pangkat: person.rank || 'N/A',
+                jabatan: person.role || 'N/A'
+              });
+            }
+          }
+        });
+      });
+    };
+
+    processSchedule(schedules.koramil);
+    processSchedule(schedules.kodim);
+    processSchedule(schedules.korem);
+
+    // Convert map values to array and sort
+    return Array.from(personnelMap.values()).sort((a, b) => a.nama.localeCompare(b.nama));
+  }, [schedules]); // This re-calculates whenever schedules change
+
   const selectedSummaryPerson = useMemo(() => {
-    if (!selectedSummaryPersonId) return null;
-    return allPersonnelForExclusion.find((person) => person.id == selectedSummaryPersonId) || null;
-  }, [selectedSummaryPersonId, allPersonnelForExclusion]);
+    if (!selectedSummaryPersonName) return null;
+    return allPersonnelInSchedules.find((person) => person.nama === selectedSummaryPersonName) || null;
+  }, [selectedSummaryPersonName, allPersonnelInSchedules]);
 
   const scheduleSummary = useMemo(() => {
     if (!selectedSummaryPerson) return null;
 
-    const matchesSelectedPerson = (person) => {
-      if (person.id != null) {
-        return person.id == selectedSummaryPerson.id;
-      }
-      return person.name === selectedSummaryPerson.nama;
-    };
+    const matchesSelectedPerson = (person) => person.name === selectedSummaryPerson.nama;
 
     return {
-      koramil: (schedules.koramil || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => item.date),
-      kodim: (schedules.kodim || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => item.date),
-      korem: (schedules.korem || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => item.date),
+      koramil: (schedules.koramil || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => new Date(item.fullDate).getDate()),
+      kodim: (schedules.kodim || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => new Date(item.fullDate).getDate()),
+      korem: (schedules.korem || []).filter((item) => item.personnel.some(matchesSelectedPerson)).map((item) => new Date(item.fullDate).getDate()),
     };
   }, [selectedSummaryPerson, schedules]);
 
@@ -1106,44 +1114,46 @@ export default function Piket() {
             )}
           </div>
 
-          <div className="patroli-form-grid">
-            <div className="form-group">
-              <label className="form-label">Bulan & Tahun Patroli</label>
-              <input
-                type="month"
-                className="form-input"
-                value={patroliMonthYear}
-                onChange={(e) => setPatroliMonthYear(e.target.value)}
-              />
-            </div>
-            {patroliReguDetails.map((regu, index) => (
-              <div className="form-group" key={`regu-${index}`}>
-                <label className="form-label">Nama Regu {index + 1}</label>
+          {user && user.role === 'danramil' && (
+            <div className="patroli-form-grid">
+              <div className="form-group">
+                <label className="form-label">Bulan & Tahun Patroli</label>
                 <input
-                  type="text"
+                  type="month"
                   className="form-input"
-                  value={regu.name}
-                  onChange={(e) => {
-                    const newReguDetails = [...patroliReguDetails];
-                    newReguDetails[index] = { ...newReguDetails[index], name: e.target.value || `Regu ${index + 1}` };
-                    setPatroliReguDetails(newReguDetails);
-                  }}
-                />
-                <label className="form-label" style={{ marginTop: '0.75rem' }}>Personel Regu {index + 1}</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Pisahkan nama dengan koma"
-                  value={regu.personnel}
-                  onChange={(e) => {
-                    const newReguDetails = [...patroliReguDetails];
-                    newReguDetails[index] = { ...newReguDetails[index], personnel: e.target.value };
-                    setPatroliReguDetails(newReguDetails);
-                  }}
+                  value={patroliMonthYear}
+                  onChange={(e) => setPatroliMonthYear(e.target.value)}
                 />
               </div>
-            ))}
-          </div>
+              {patroliReguDetails.map((regu, index) => (
+                <div className="form-group" key={`regu-${index}`}>
+                  <label className="form-label">Nama Regu {index + 1}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={regu.name}
+                    onChange={(e) => {
+                      const newReguDetails = [...patroliReguDetails];
+                      newReguDetails[index] = { ...newReguDetails[index], name: e.target.value || `Regu ${index + 1}` };
+                      setPatroliReguDetails(newReguDetails);
+                    }}
+                  />
+                  <label className="form-label" style={{ marginTop: '0.75rem' }}>Personel Regu {index + 1}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Pisahkan nama dengan koma"
+                    value={regu.personnel}
+                    onChange={(e) => {
+                      const newReguDetails = [...patroliReguDetails];
+                      newReguDetails[index] = { ...newReguDetails[index], personnel: e.target.value };
+                      setPatroliReguDetails(newReguDetails);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="schedule-grid">
             {patroliScheduleData.schedule && patroliScheduleData.schedule.length > 0 ? (
@@ -1169,49 +1179,46 @@ export default function Piket() {
             )}
           </div>
 
-          <div className="personnel-summary">
-            <div className="summary-header">
-              <div>
-                <h2>Ringkasan Jadwal Personel</h2>
-                <p className="summary-description">Pilih personel untuk melihat tanggal bertugas di Koramil, Kodim, dan Korem.</p>
-              </div>
-              <div className="summary-select-wrapper">
-                <select
-                  className="form-input"
-                  value={selectedSummaryPersonId}
-                  onChange={(e) => setSelectedSummaryPersonId(e.target.value)}
-                >
-                  <option value="">-- Pilih Personel --</option>
-                  {allPersonnelForExclusion
-                    .filter((person) => person.jabatan !== 'Danramil')
-                    .sort((a, b) => a.nama.localeCompare(b.nama))
-                    .map((person) => (
-                      <option key={person.id} value={person.id}>
+          {user && (user.role === 'danramil' || user.role === 'babinsa') && (
+            <div className="personnel-summary">
+              <div className="summary-header">
+                <div>
+                  <h2>Ringkasan Jadwal Personel</h2>
+                  <p className="summary-description">Pilih personel untuk melihat tanggal bertugas di Koramil, Kodim, dan Korem.</p>
+                </div>
+                <div className="summary-select-wrapper">
+                  <select
+                    className="form-input"
+                    value={selectedSummaryPersonName}
+                    onChange={(e) => setSelectedSummaryPersonName(e.target.value)}
+                  >
+                    <option value="">-- Pilih Personel --</option>
+                    {allPersonnelInSchedules.map((person) => (
+                      <option key={person.id} value={person.nama}>
                         {person.nama} ({person.pangkat})
                       </option>
-                  ))}
-                </select>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            {selectedSummaryPerson && (
-              <div className="summary-cards">
-                {['koramil', 'kodim', 'korem'].map((category) => (
-                  <div key={category} className="summary-card">
-                    <h3>{category === 'koramil' ? 'Piket Koramil' : category === 'kodim' ? 'Piket Kodim' : 'Piket Korem'}</h3>
-                    <p className="summary-personnel-name">{selectedSummaryPerson.nama}</p>
-                    {scheduleSummary[category].length > 0 ? (
-                      <p className="summary-dates">
-                        {scheduleSummary[category].join(', ')}
-                      </p>
-                    ) : (
-                      <p className="summary-no-dates">Tidak ada tugas pada kategori ini.</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+              {selectedSummaryPerson && (
+                <div className="summary-cards">
+                  {['koramil', 'kodim', 'korem'].map((category) => (
+                    <div key={category} className="summary-card">
+                      <h3>{category === 'koramil' ? 'Piket Koramil' : category === 'kodim' ? 'Piket Kodim' : 'Piket Korem'}</h3>
+                      <p className="summary-personnel-name">{selectedSummaryPerson.nama}</p>
+                      {scheduleSummary[category].length > 0 ? (
+                        <p className="summary-dates">Tanggal: {scheduleSummary[category].join(', ')}</p>
+                      ) : (
+                        <p className="summary-no-dates">Tidak ada jadwal tugas pada bulan ini.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
       {/* Modal Edit Jadwal Piket */}
@@ -1325,21 +1332,30 @@ export default function Piket() {
                     </div>
                     <div className="form-group">
                         <label className="form-label">Personel Piket Korem (Pawas)</label>
-                        <select
-                            className="form-input"
-                            value={koremPiketPersonelId}
-                            onChange={(e) => setKoremPiketPersonelId(e.target.value)}
-                            required
-                        >
-                            <option value="" disabled>-- Pilih Personel --</option>
-                            {allPersonnelForExclusion
-                                .filter(p => p.jabatan !== 'Danramil')
-                                .map(person => (
-                                    <option key={person.id} value={person.id}>
-                                        {person.nama} ({person.pangkat})
-                                    </option>
+                        <div className="exclusion-grid-container" style={{ maxHeight: '150px' }}>
+                            {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
+                                <div key={`korem-piket-${person.id}`} className="exclusion-item">
+                                    <input
+                                        type="checkbox"
+                                        id={`korem-piket-${person.id}`}
+                                        className="exclusion-checkbox"
+                                        checked={koremPiketPersonelIds.includes(person.id)}
+                                        onChange={(e) => {
+                                            const personId = person.id;
+                                            setKoremPiketPersonelIds(prev =>
+                                                e.target.checked
+                                                    ? [...prev, personId]
+                                                    : prev.filter(id => id !== personId)
+                                            );
+                                        }}
+                                    />
+                                    <label htmlFor={`korem-piket-${person.id}`} className="exclusion-label">
+                                        <span className="exclusion-name">{person.nama}</span>
+                                        <span className="exclusion-rank">{person.pangkat}</span>
+                                    </label>
+                                </div>
                             ))}
-                        </select>
+                        </div>
                     </div>
                 </div>
 
@@ -1347,7 +1363,7 @@ export default function Piket() {
                 <div className="config-section">
                     {/* Koramil Exclusions */}
                     <div>
-                        <label className="form-label">Kecualikan dari Piket Koramil</label>
+                        <label className="form-label">Pilih Personel Piket Koramil</label>
                         <div className="exclusion-grid-container">
                             {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length > 0 ? (
                                 allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
@@ -1356,10 +1372,10 @@ export default function Piket() {
                                             type="checkbox"
                                             id={`exclude-koramil-${person.id}`}
                                             className="exclusion-checkbox"
-                                            checked={(excludedPersonnelIds.koramil || []).includes(person.id)}
+                                            checked={(includedPersonnelIds.koramil || []).includes(person.id)}
                                             onChange={(e) => {
                                                 const personId = person.id;
-                                                setExcludedPersonnelIds((prev) => ({
+                                                setIncludedPersonnelIds((prev) => ({
                                                     ...prev,
                                                     koramil: e.target.checked
                                                         ? [...(prev.koramil || []), personId]
@@ -1382,7 +1398,7 @@ export default function Piket() {
                     </div>
                     {/* Kodim Exclusions */}
                     <div style={{ marginTop: '1.5rem' }}>
-                        <label className="form-label">Kecualikan dari Piket Kodim</label>
+                        <label className="form-label">Pilih Personel Piket Kodim</label>
                         <div className="exclusion-grid-container">
                             {allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').length > 0 ? (
                                 allPersonnelForExclusion.filter(p => p.jabatan !== 'Danramil').map(person => (
@@ -1391,10 +1407,10 @@ export default function Piket() {
                                             type="checkbox"
                                             id={`exclude-kodim-${person.id}`}
                                             className="exclusion-checkbox"
-                                            checked={(excludedPersonnelIds.kodim || []).includes(person.id)}
+                                            checked={(includedPersonnelIds.kodim || []).includes(person.id)}
                                             onChange={(e) => {
                                                 const personId = person.id;
-                                                setExcludedPersonnelIds((prev) => ({
+                                                setIncludedPersonnelIds((prev) => ({
                                                     ...prev,
                                                     kodim: e.target.checked
                                                         ? [...(prev.kodim || []), personId]
