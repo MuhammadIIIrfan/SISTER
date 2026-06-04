@@ -5,6 +5,43 @@ import logoAsset from '../assets/LOGO_KOREM_043.png';
 
 // --- Helper Functions & Sub-components ---
 
+// Fixed Regu Personnel (Personel Patroli Tetap)
+const FIXED_REGU = [
+  {
+    name: 'Regu 1',
+    personnel: [
+      { name: 'Serka Antonius', rank: 'Serka', role: 'Patroli' },
+      { name: 'Sertu Wayan', rank: 'Sertu', role: 'Patroli' },
+      { name: 'Serda KC Joko', rank: 'Serda', role: 'Patroli' }
+    ]
+  },
+  {
+    name: 'Regu 2',
+    personnel: [
+      { name: 'Serda Boimin', rank: 'Serda', role: 'Patroli' },
+      { name: 'Serda Joko Partono', rank: 'Serda', role: 'Patroli' },
+      { name: 'Serda Andi', rank: 'Serda', role: 'Patroli' }
+    ]
+  },
+  {
+    name: 'Regu 3',
+    personnel: [
+      { name: 'Sertu Agus', rank: 'Sertu', role: 'Patroli' },
+      { name: 'Sertu Nanang', rank: 'Sertu', role: 'Patroli' },
+      { name: 'Serda Trian', rank: 'Serda', role: 'Patroli' },
+      { name: 'Koptu Suhada', rank: 'Koptu', role: 'Patroli' }
+    ]
+  },
+  {
+    name: 'Regu 4',
+    personnel: [
+      { name: 'Serka Yudi', rank: 'Serka', role: 'Patroli' },
+      { name: 'Serda Nasip', rank: 'Serda', role: 'Patroli' },
+      { name: 'Praka Rudi', rank: 'Praka', role: 'Patroli' }
+    ]
+  }
+];
+
 // Helper function to get initials from a name, matching the original logic.
 const getInitial = (name) => {
   if (!name || typeof name !== 'string') return '??';
@@ -136,6 +173,7 @@ export default function Piket() {
             const selectedPerson = apiPersonnel.find(p => p.id == id);
             if (selectedPerson) {
                 return {
+                    id: selectedPerson.id,
                     name: selectedPerson.nama,
                     role: 'Pawas Korem',
                     initial: getInitial(selectedPerson.nama),
@@ -356,7 +394,7 @@ export default function Piket() {
     return newSchedules;
   };
 
-  const generatePatroliSchedule = (monthYear, reguDetails) => {
+  const generatePatroliSchedule = (monthYear, apiPersonnel = null) => {
     const [year, month] = monthYear.split('-').map((value) => parseInt(value, 10));
     const patrolDates = [];
     const date = new Date(year, month - 1, 1);
@@ -368,23 +406,43 @@ export default function Piket() {
       date.setDate(date.getDate() + 1);
     }
 
-    return patrolDates.map((d, idx) => {
-      const regu = reguDetails[idx % reguDetails.length] || { name: `Regu ${idx + 1}`, personnel: '' };
-      return {
-        id: `patroli-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`,
+      // Create array of regu indices and shuffle them
+      const reguIndices = [0, 1, 2, 3]; // Indices for the 4 regus
+    
+      // Fisher-Yates shuffle algorithm for true randomization
+      for (let i = reguIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [reguIndices[i], reguIndices[j]] = [reguIndices[j], reguIndices[i]];
+      }
+
+      // Generate schedule with randomized regu assignment
+    const scheduleItems = [];
+    
+    patrolDates.forEach((d, saturdayIndex) => {
+        // Cycle through the shuffled regu indices
+        const reguIdx = reguIndices[saturdayIndex % FIXED_REGU.length];
+      const regu = FIXED_REGU[reguIdx];
+
+      // Convert all personnel in this regu to display format
+      const allPersonnelInRegu = regu.personnel.map(person => ({
+        name: person.name,
+        role: person.role,
+        initial: getInitial(person.name),
+        rank: person.rank
+      }));
+
+      scheduleItems.push({
+        id: `patroli-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}-regu-${reguIdx + 1}`,
         day: d.toLocaleDateString('id-ID', { weekday: 'long' }),
-        date: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        date: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
         fullDate: d.toISOString(),
-        shift: 'Patroli Sabtu',
+        shift: regu.name,
         location: 'Patroli Sabtu',
-        personnel: [{
-          name: regu.name,
-          role: regu.personnel || 'Belum ada personel',
-          initial: regu.name ? regu.name.split(' ').map((s) => s[0]).join('').toUpperCase().slice(0, 2) : 'P',
-          rank: ''
-        }]
-      };
+        personnel: allPersonnelInRegu
+      });
     });
+
+    return scheduleItems;
   };
 
   // Mengambil state jadwal dari localStorage, atau render default jika kosong
@@ -441,12 +499,7 @@ export default function Piket() {
                       { name: 'Regu 3', personnel: '' },
                       { name: 'Regu 4', personnel: '' }
                     ],
-                    schedule: generatePatroliSchedule(new Date().toISOString().substring(0, 7), [
-                      { name: 'Regu 1', personnel: '' },
-                      { name: 'Regu 2', personnel: '' },
-                      { name: 'Regu 3', personnel: '' },
-                      { name: 'Regu 4', personnel: '' }
-                    ])
+                    schedule: generatePatroliSchedule(new Date().toISOString().substring(0, 7), data)
                 };
                 setPatroliScheduleData(patrolDefault);
                 localStorage.setItem('patroliData', JSON.stringify(patrolDefault));
@@ -470,12 +523,7 @@ export default function Piket() {
                       { name: 'Regu 3', personnel: '' },
                       { name: 'Regu 4', personnel: '' }
                     ],
-                    schedule: generatePatroliSchedule(new Date().toISOString().substring(0, 7), [
-                      { name: 'Regu 1', personnel: '' },
-                      { name: 'Regu 2', personnel: '' },
-                      { name: 'Regu 3', personnel: '' },
-                      { name: 'Regu 4', personnel: '' }
-                    ])
+                    schedule: generatePatroliSchedule(new Date().toISOString().substring(0, 7), null)
                 };
                 setPatroliScheduleData(patrolDefault);
                 localStorage.setItem('patroliData', JSON.stringify(patrolDefault));
@@ -543,16 +591,30 @@ export default function Piket() {
     }
   };
 
-  const executeCreatePatroliSchedule = () => {
-    const newSchedule = generatePatroliSchedule(patroliMonthYear, patroliReguDetails);
-    const newPatroliData = {
-      monthYear: patroliMonthYear,
-      reguDetails: [...patroliReguDetails],
-      schedule: newSchedule
-    };
-    setPatroliScheduleData(newPatroliData);
-    localStorage.setItem('patroliData', JSON.stringify(newPatroliData));
-    setNotification({ type: 'success', message: 'Jadwal patroli Sabtu berhasil dibuat.' });
+  const executeCreatePatroliSchedule = async () => {
+    try {
+      // Fetch personnel from API
+      const res = await fetch('http://localhost:5000/api/personel');
+      const apiPersonnel = await res.json();
+      
+      const newSchedule = generatePatroliSchedule(patroliMonthYear, apiPersonnel);
+      const newPatroliData = {
+        monthYear: patroliMonthYear,
+        reguDetails: [
+          { name: 'Regu 1', personnel: '' },
+          { name: 'Regu 2', personnel: '' },
+          { name: 'Regu 3', personnel: '' },
+          { name: 'Regu 4', personnel: '' }
+        ],
+        schedule: newSchedule
+      };
+      setPatroliScheduleData(newPatroliData);
+      localStorage.setItem('patroliData', JSON.stringify(newPatroliData));
+      setNotification({ type: 'success', message: 'Jadwal patroli Sabtu berhasil dibuat dengan personel acak per regu.' });
+    } catch (err) {
+      console.error("Error generating patrol schedule:", err);
+      setNotification({ type: 'error', message: 'Gagal membuat jadwal patroli. Pastikan server backend berjalan.' });
+    }
   };
 
   // State untuk form edit
@@ -1105,64 +1167,54 @@ export default function Piket() {
           <div className="patroli-header">
             <div>
               <h2>Patroli Sabtu</h2>
-              <p className="patroli-description">Generate jadwal patroli setiap hari Sabtu untuk 4 regu, dengan input personnel per regu.</p>
+              <p className="patroli-description">Jadwal patroli dengan anggota tetap per regu. Setiap Sabtu bergantian regu dengan satu anggota acak dari regu tersebut.</p>
             </div>
             {user && user.role === 'danramil' && (
-              <button className="btn-generate" onClick={executeCreatePatroliSchedule}>
-                <CalendarPlus size={18} /> Buat Jadwal Patroli
-              </button>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ marginBottom: '0.5rem' }}>Bulan Patroli</label>
+                  <input
+                    type="month"
+                    className="form-input"
+                    value={patroliMonthYear}
+                    onChange={(e) => setPatroliMonthYear(e.target.value)}
+                    style={{ width: '180px' }}
+                  />
+                </div>
+                <button className="btn-generate" onClick={executeCreatePatroliSchedule} style={{ marginTop: '1.5rem' }}>
+                  <CalendarPlus size={18} /> Generate Jadwal
+                </button>
+              </div>
             )}
           </div>
 
-          {user && user.role === 'danramil' && (
-            <div className="patroli-form-grid">
-              <div className="form-group">
-                <label className="form-label">Bulan & Tahun Patroli</label>
-                <input
-                  type="month"
-                  className="form-input"
-                  value={patroliMonthYear}
-                  onChange={(e) => setPatroliMonthYear(e.target.value)}
-                />
-              </div>
-              {patroliReguDetails.map((regu, index) => (
-                <div className="form-group" key={`regu-${index}`}>
-                  <label className="form-label">Nama Regu {index + 1}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={regu.name}
-                    onChange={(e) => {
-                      const newReguDetails = [...patroliReguDetails];
-                      newReguDetails[index] = { ...newReguDetails[index], name: e.target.value || `Regu ${index + 1}` };
-                      setPatroliReguDetails(newReguDetails);
-                    }}
-                  />
-                  <label className="form-label" style={{ marginTop: '0.75rem' }}>Personel Regu {index + 1}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Pisahkan nama dengan koma"
-                    value={regu.personnel}
-                    onChange={(e) => {
-                      const newReguDetails = [...patroliReguDetails];
-                      newReguDetails[index] = { ...newReguDetails[index], personnel: e.target.value };
-                      setPatroliReguDetails(newReguDetails);
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="schedule-grid">
+          <div className="schedule-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
             {patroliScheduleData.schedule && patroliScheduleData.schedule.length > 0 ? (
               patroliScheduleData.schedule.map((item) => (
-                <ScheduleCard key={item.id} item={item} canEdit={false} />
+                <div key={item.id} className="patroli-day-card-simple">
+                  <div className="patroli-day-header-simple">
+                    <div>
+                      <div className="patroli-day-name-simple">{item.day}</div>
+                      <div className="patroli-date-simple">{item.date}</div>
+                    </div>
+                    <div className="patroli-regu-badge">{item.shift}</div>
+                  </div>
+                  <div className="patroli-personnel-list">
+                    {item.personnel.map((person, idx) => (
+                      <div key={idx} className="patroli-personnel-row">
+                        <div className="patroli-personnel-avatar-small">{person.initial}</div>
+                        <div className="patroli-personnel-text-small">
+                          <div className="patroli-personnel-name-small">{person.name}</div>
+                          <div className="patroli-personnel-rank-small">{person.rank}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))
             ) : (
               <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', background: 'white', borderRadius: '16px', color: '#64748b'}}>
-                Jadwal patroli Sabtu belum tersedia. Gunakan form di atas untuk membuatnya.
+                Jadwal patroli Sabtu belum tersedia. Gunakan tombol Generate di atas untuk membuatnya.
               </div>
             )}
           </div>
